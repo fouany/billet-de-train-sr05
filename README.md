@@ -1,4 +1,4 @@
-
+```
 Nom du projet : Réservation de billets de Train
 
 Langage : Python
@@ -72,3 +72,4 @@ TO-DO:
 -> Snapshot
 -> README utilisation sous linux et structure architecture
 -> Diapo (PDF) pour la soutenance (checker réponse prof)
+```
