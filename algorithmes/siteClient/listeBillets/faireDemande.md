@@ -1,5 +1,5 @@
 ```
-# instance site C, C est le terminal demandeur
+# instance site client C, C est le terminal demandeur
 definition faireDemandeListeBillets(typeDemande : 'consultation' ou 'reservation')
     soit M : messageDemande
     M.typeDemande = typeDemande
