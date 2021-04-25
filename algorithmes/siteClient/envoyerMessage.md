@@ -1,7 +1,7 @@
 ```
 # instance du site client C
 definition envoyerMessage(M : message, S : site)
-    si Voisins(C) contient S alors
+    si C.voisins contient S alors
         envoyer(M,S)
         lancerThreadDelaiMaxAttenteReponse(M.identifiant)
     sinon alors
@@ -14,7 +14,7 @@ definition envoyerMessage(M : message, S_tab : site[])
     soit clefEnvoye : booleen
     clefEnvoye = faux
     Pour S parmi S_tab faire
-        si Voisins(C) contient S alors
+        si C.voisins contient S alors
             envoyer(M,S)
             clefEnvoye = vrai
         fin si
