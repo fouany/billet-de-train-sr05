@@ -1,0 +1,1 @@
+bin/newapp.sh -v -i=BASpy -o=CLTpy on david-NU-SF314-41-R1X6, vendredi 30 avril 2021 at 8h41:49
