@@ -2,6 +2,10 @@
 cp -R bin ~/AIRPLUG/
 cp -R  CLTpy ~/AIRPLUG/
 cp -R  GCHpy/ ~/AIRPLUG/
+# copie des mod
+cp mods/billet_mod.py  ~/AIRPLUG/LIBAPGpy/LIBAPGpy/
+cp mods/msg_mod.py ~/AIRPLUG/LIBAPGpy/LIBAPGpy/
+cp mods/outil_mod.py ~/AIRPLUG/LIBAPGpy/LIBAPGpy/
 
 # on va dans bin
 cd ~/AIRPLUG/bin/
