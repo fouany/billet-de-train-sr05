@@ -4,30 +4,7 @@ import sys
 import clt_mod_lport as lport
 sys.path.append(os.path.abspath("{}/LIBAPGpy/LIBAPGpy".format(os.environ["APG_PATH"])))
 import libapg as apg
-
-
-class CLTMessage(apg.msg.Message):
-    """Application-specific message treatment"""
-    def __init__(self, text, app, payload=None, nseq=None, lmp = None):
-        super().__init__(text, app)
-        self.fields += ["payload","nseq","lmp"]
-        if payload != None:
-            self.content["payload"] = payload
-        if nseq != None :
-            self.content["nseq"] = nseq
-        if lmp != None :
-            self.content["lmp"] = lmp
-        if len(text) > 0:
-            self.parse_text(text)
-    def payload(self):
-        return self.content["payload"]
-    def nseq(self):
-        return self.content["nseq"]
-    def lmp(self):
-        return self.content["lmp"]
-
-
-
+import msg_mod as msg
 
 
 class CLTApp(apg.Application):
@@ -53,7 +30,7 @@ class CLTApp(apg.Application):
         if self.started  and self.check_mandatory_parameters():
             self.vrb("{}.rcv(pld={}, src={}, dst={}, where={})".format(self.APP(),pld, src, dst, where), 6)
             super().receive(pld, src=src, dst=dst, where=where)
-            received_message=CLTMessage(pld,self)
+            received_message=msg.Message(pld,self)
             if int(received_message.lmp()) > self.lport.getValue():
                 self.lport.setValue(int(received_message.lmp()))
             self.lport.incr()
@@ -84,7 +61,8 @@ self.received_lport.config(text = 'H : {}')
             self.destination_zone = graphic_where.get()
         if graphic_period != None:
             self.period = float(graphic_period.get())
-        message = CLTMessage("",self, self.msg, self.nseq, lmp = self.lport.getValue())
+        message = msg.Message("",self, self.msg, self.nseq, lmp = self.lport.getValue(),
+        clientDemandeur = self.destination_app, clientTransmetteur = self.destination_app)
         self.snd(str(message), who=self.destination_app, where=self.destination_zone)
         self.nseq += 1
 
