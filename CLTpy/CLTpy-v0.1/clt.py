@@ -5,6 +5,7 @@ import clt_mod_lport as lport
 sys.path.append(os.path.abspath("{}/LIBAPGpy/LIBAPGpy".format(os.environ["APG_PATH"])))
 import libapg as apg
 import msg_mod as msg
+import outil_mod as outil
 
 
 class CLTApp(apg.Application):
@@ -18,6 +19,7 @@ class CLTApp(apg.Application):
         self.period = float(self.params["bas-delay"])
         self.nseq = 0
         self.lport = lport.lport()
+        self.info = "-"
         self.sending_in_progress = None
         if self.check_mandatory_parameters():
             self.config_gui()
@@ -30,19 +32,31 @@ class CLTApp(apg.Application):
         if self.started  and self.check_mandatory_parameters():
             self.vrb("{}.rcv(pld={}, src={}, dst={}, where={})".format(self.APP(),pld, src, dst, where), 6)
             super().receive(pld, src=src, dst=dst, where=where)
-            received_message=msg.MessageDemande(pld,self)
+
+            instanceMessage = outil.GetInstance(pld)
+            if instanceMessage == "MessageDemande":
+                received_message=msg.MessageDemande(pld,self)
+                self.info=received_message.typeDemande()
+                infoBillet=received_message.infoBillet()
+                if len(infoBillet) > 0:
+                    self.info+=" pour un billet : "+infoBillet
+            elif instanceMessage == "MessageAccuseReception":
+                received_message=msg.MessageAccuseReception(pld,self)
+                self.info="id_message_recu = "+received_message.identifiantMessageRecu()
+            else:
+                received_message=msg.Message(pld,self)
+                self.info="Message lambda"
+
             if int(received_message.lmp()) > self.lport.getValue():
                 self.lport.setValue(int(received_message.lmp()))
             self.lport.incr()
             self.gui.tk_instr("""
 self.received_source.config(text="{}")
-self.received_payload.config(text="{}")
+self.received_instance.config(text="{}")
 self.received_nseq.config(text="{}")
 self.received_lport.config(text = 'H : {}')
-""".format(src, received_message.payload(), received_message.nseq(),self.lport.getValue())) 
-
-
-
+self.received_info.config(text = '{}')
+""".format(src, received_message.instance(), received_message.nseq(),self.lport.getValue(),self.info))
         else:
             self.vrb_dispwarning("Application {} not started".format(self.APP()))
 
@@ -61,7 +75,12 @@ self.received_lport.config(text = 'H : {}')
             self.destination_zone = graphic_where.get()
         if graphic_period != None:
             self.period = float(graphic_period.get())
-        message = msg.MessageDemande("",self,self.msg, self.nseq, lmp = self.lport.getValue(), clientDemandeur = self.destination_app, clientTransmetteur = self.destination_app)
+
+        if self.msg == "demande":
+            message = msg.MessageDemande("",self, self.nseq, lmp = self.lport.getValue(), clientDemandeur = self.destination_app, clientTransmetteur = self.destination_app)
+        else:
+            message = msg.Message("",self, self.nseq, lmp = self.lport.getValue(), clientDemandeur = self.destination_app, clientTransmetteur = self.destination_app)
+
         self.snd(str(message), who=self.destination_app, where=self.destination_zone)
         self.nseq += 1
 
@@ -110,14 +129,14 @@ self.stop_sending_button.pack(side="left")
 self.reception=tk.LabelFrame(self.app_zone, text="Received message")
 self.received_source_label=tk.Label(self.reception, text="Message reçu de")
 self.received_source=tk.Label(self.reception, text="-", width=4)
-self.received_payload_label = tk.Label(self.reception,text=":")
-self.received_payload = tk.Label(self.reception,text="-",width=40)
+self.received_instance_label = tk.Label(self.reception,text=":")
+self.received_instance = tk.Label(self.reception,text="-",width=40)
 self.received_nseq_label = tk.Label(self.reception,text="nseq : ")
 self.received_nseq = tk.Label(self.reception,text="-", width=4)
 self.received_source_label.pack(side="left")
 self.received_source.pack(side="left")
-self.received_payload_label.pack(side="left")
-self.received_payload.pack(side="left")
+self.received_instance_label.pack(side="left")
+self.received_instance.pack(side="left")
 self.received_nseq_label.pack(side="left")
 self.received_nseq.pack(side="left")
 self.emission_zone.pack(side="top", fill=tk.BOTH, expand=1)
@@ -130,6 +149,11 @@ self.lport_zone = tk.LabelFrame(self.root, text="Local Lamport's clock")
 self.received_lport = tk.Label(self.lport_zone,text="{}")
 self.received_lport.pack(side="left", expand="yes", fill="y", pady=2)
 self.lport_zone.pack(fill="both", expand="yes", side="top", pady=5)""".format(self.lport.getValue()))
+        self.gui.tk_instr("""
+self.info_zone = tk.LabelFrame(self.root, text="Info")
+self.received_info = tk.Label(self.info_zone,text="{}")
+self.received_info.pack(side="left", expand="yes", fill="y", pady=2)
+self.info_zone.pack(fill="both", expand="yes", side="top", pady=5)""".format(self.info))
 
 app = CLTApp()
 if app.params["auto"]:
