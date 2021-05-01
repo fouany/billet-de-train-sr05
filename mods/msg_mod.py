@@ -8,9 +8,9 @@ id_message_seq = 0
 
 class Message(apg.msg.Message):
     """Application-specific abstract message"""
-    def __init__(self, text, app, nseq=None, lmp=None, clientDemandeur=None, clientTransmetteur=None, type='requete', instance='default'):
+    def __init__(self, text, app, nseq=None, lmp=None, clientDemandeur=None, clientDestinataire=None, instance='default'):
         super().__init__(text, app)
-        self.fields += ["instance","nseq","lmp","id","clientDemandeur","clientTransmetteur","type"]
+        self.fields += ["instance","nseq","lmp","id","clientDemandeur","clientDestinataire"]
         global id_message_seq
         id_message_seq += 1
         self.content["id"] = id_message_seq
@@ -22,26 +22,27 @@ class Message(apg.msg.Message):
             self.content["lmp"] = lmp
         if clientDemandeur !=None:
             self.content["clientDemandeur"] = clientDemandeur
-        if clientDemandeur !=None:
-            self.content["clientTransmetteur"] = clientTransmetteur
-        self.content["type"] = type
+        if clientDestinataire !=None:
+            self.content["clientDestinataire"] = clientDestinataire
         if len(text) > 0:
             self.parse_text(text)
     def instance(self):
         return self.content["instance"]
+    def id(self):
+        return self.content["id"]
     def nseq(self):
         return self.content["nseq"]
     def lmp(self):
         return self.content["lmp"]
     def clientDemandeur(self):
         return self.content["clientDemandeur"]
-    def clientTransmetteur(self):
-        return self.content["clientTransmetteur"]
+    def clientDestinataire(self):
+        return self.content["clientDestinataire"]
 
 class MessageDemande(Message):
     """Application-specific message MessageDemande"""
-    def __init__(self, text, app, nseq=None, lmp=None, clientDemandeur=None, clientTransmetteur=None, typeDemande='consultation', infoBillet=""):
-        super().__init__(text,app,nseq,lmp,clientDemandeur,clientTransmetteur,"requete","MessageDemande")
+    def __init__(self, text, app, nseq=None, lmp=None, clientDemandeur=None, typeDemande='consultation', infoBillet=""):
+        super().__init__(text,app,nseq,lmp,clientDemandeur,clientDestinataire="CLT3",instance="MessageDemande")
         self.fields += ["typeDemande","infoBillet"]
         self.content["typeDemande"] = typeDemande
         if infoBillet != None:
@@ -55,8 +56,8 @@ class MessageDemande(Message):
 
 class MessageAccuseReception(Message):
     """Application-specific message MessageAccuseReception"""
-    def __init__(self, text, app, nseq=None, lmp=None, clientDemandeur=None, clientTransmetteur=None, identifiantMessageRecu=None):
-        super().__init__(text,app,nseq,lmp,clientDemandeur,clientTransmetteur,"requete","MessageAccuseReception")
+    def __init__(self, text, app, nseq=None, lmp=None, clientDemandeur=None, identifiantMessageRecu=None):
+        super().__init__(text,app,nseq,lmp,clientDemandeur,clientDestinataire="CLT3",instance="MessageAccuseReception")
         self.fields += ["identifiantMessageRecu"]
         self.content["identifiantMessageRecu"] = identifiantMessageRecu
         if len(text) > 0:

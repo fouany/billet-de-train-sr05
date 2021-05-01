@@ -15,13 +15,13 @@ mkfifo ./tmp/in3b ./tmp/out3b
 
 
 # Créer les apps et redirection de stdin et out de chacune
-./clt.py --auto --ident=node1 --whatwho --bas-dest=NET < ./tmp/in1a > ./tmp/out1a &
+./clt.py --auto --ident=node1 --whatwho --bas-dest=NET --name=CLT1 < ./tmp/in1a > ./tmp/out1a &
 ./net.py --auto --ident=node1 --whatwho < ./tmp/in1b > ./tmp/out1b &
 
-./clt.py --auto --ident=node2 --whatwho --bas-dest=NET < ./tmp/in2a > ./tmp/out2a &
-./net.py --auto --ident=node2 --whatwho  < ./tmp/in2b > ./tmp/out2b &
+./clt.py --auto --ident=node2 --whatwho --bas-dest=NET --name=CLT2 < ./tmp/in2a > ./tmp/out2a &
+./net.py --auto --ident=node2 --whatwho < ./tmp/in2b > ./tmp/out2b &
 
-./clt.py --auto --ident=node3 --whatwho --bas-dest=NET < ./tmp/in3a > ./tmp/out3a &
+./clt.py --auto --ident=node3 --whatwho --bas-dest=NET --name=CLT3 < ./tmp/in3a > ./tmp/out3a &
 ./net.py --auto --ident=node3 --whatwho < ./tmp/in3b > ./tmp/out3b &
 
 # Rediriger les pipes
