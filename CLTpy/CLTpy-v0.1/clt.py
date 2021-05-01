@@ -30,7 +30,7 @@ class CLTApp(apg.Application):
         if self.started  and self.check_mandatory_parameters():
             self.vrb("{}.rcv(pld={}, src={}, dst={}, where={})".format(self.APP(),pld, src, dst, where), 6)
             super().receive(pld, src=src, dst=dst, where=where)
-            received_message=msg.Message(pld,self)
+            received_message=msg.MessageDemande(pld,self)
             if int(received_message.lmp()) > self.lport.getValue():
                 self.lport.setValue(int(received_message.lmp()))
             self.lport.incr()
@@ -39,7 +39,7 @@ self.received_source.config(text="{}")
 self.received_payload.config(text="{}")
 self.received_nseq.config(text="{}")
 self.received_lport.config(text = 'H : {}')
-""".format(src, received_message.payload(), received_message.nseq(),self.lport.getValue()))
+""".format(src, received_message.payload(), received_message.nseq(),self.lport.getValue())) 
 
 
 
@@ -61,8 +61,7 @@ self.received_lport.config(text = 'H : {}')
             self.destination_zone = graphic_where.get()
         if graphic_period != None:
             self.period = float(graphic_period.get())
-        message = msg.Message("",self, self.msg, self.nseq, lmp = self.lport.getValue(),
-        clientDemandeur = self.destination_app, clientTransmetteur = self.destination_app)
+        message = msg.MessageDemande("",self,self.msg, self.nseq, lmp = self.lport.getValue(), clientDemandeur = self.destination_app, clientTransmetteur = self.destination_app)
         self.snd(str(message), who=self.destination_app, where=self.destination_zone)
         self.nseq += 1
 

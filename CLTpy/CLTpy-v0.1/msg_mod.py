@@ -7,8 +7,7 @@ import libapg as apg
 
 class Message(apg.msg.Message):
     """Application-specific abstract message"""
-    def __init__(self, text, app, payload=None, nseq=None, lmp=None,
-    clientDemandeur=None, clientTransmetteur=None, type='requete'):
+    def __init__(self, text, app, payload=None, nseq=None, lmp=None, clientDemandeur=None, clientTransmetteur=None, type='requete'):
         super().__init__(text, app)
         self.fields += ["payload","nseq","lmp","clientDemandeur","clientTransmetteur","type"]
         if payload != None:
@@ -37,15 +36,14 @@ class Message(apg.msg.Message):
 
 class MessageDemande(Message):
     """Application-specific message MessageDemande"""
-    def __init__(self, text, app, payload=None, nseq=None, lmp=None,
-    clientDemandeur=None, clientTransmetteur=None, type='requete',
-    typeDemande='consultation', infoBillet=None):
-        super().__init__(self,text,app,payload,nseq,lmp,
-        clientDemandeur,clientTransmetteur,type)
+    def __init__(self, text, app, payload=None, nseq=None, lmp=None, clientDemandeur=None, clientTransmetteur=None, type='requete', typeDemande='consultation', infoBillet=None):
+        super().__init__(text,app,payload,nseq,lmp,clientDemandeur,clientTransmetteur,type)
         self.fields += ["typeDemande","infoBillet"]
         self.content["typeDemande"] = typeDemande
         if infoBillet != None:
             self.content["infoBillet"] = infoBillet
+        if len(text) > 0:
+            self.parse_text(text)
     def typeDemande(self):
         return self.content["typeDemande"]
     def infoBillet(self):
