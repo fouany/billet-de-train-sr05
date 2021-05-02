@@ -7,7 +7,7 @@ definition repondreListeBillets(M : messageDemande)
     si R.typeDemande = 'reservation' alors
         mettreDeCoteBillets(R)
     fin si
-    R.clientDemandeur = M.clientDemandeur
-    repondreMessage(R,R.clientDemandeur)
+    R.clientRecepteur = M.clientDemandeur
+    repondreMessage(R,R.clientRecepteur)
 fin definition
 ```
