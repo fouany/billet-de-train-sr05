@@ -64,3 +64,23 @@ class MessageAccuseReception(Message):
             self.parse_text(text)
     def identifiantMessageRecu(self):
         return self.content["identifiantMessageRecu"]
+
+# definition messageAvecBillets herite message
+#     typeDemande : 'consultation' ou 'reservation'
+#     billets : billet[]
+# fin definition
+
+
+class MessageAvecBillets(Message):
+    """Application-specific message MessageDemande"""
+    def __init__(self, text, app, nseq=None, lmp=None, clientDemandeur=None, typeDemande='consultation', listeBillet=[]):
+        super().__init__(text,app,nseq,lmp,clientDemandeur,clientDestinataire="CLT3",instance="MessageAvecBillets")
+        self.fields += ["typeDemande","listeBillet"]
+        self.content["typeDemande"] = typeDemande
+        self.content["listeBillet"] = listeBillet
+        if len(text) > 0:
+            self.parse_text(text)
+    def typeDemande(self):
+        return self.content["typeDemande"]
+    def listeBillet(self):
+        return self.content["listeBillet"]

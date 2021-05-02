@@ -6,6 +6,7 @@ sys.path.append(os.path.abspath("{}/LIBAPGpy/LIBAPGpy".format(os.environ["APG_PA
 import libapg as apg
 import msg_mod as msg
 import outil_mod as outil
+import billet_mod as billet
 import time
 
 
@@ -22,6 +23,11 @@ class GCHApp(apg.Application):
         self.lport = lport.lport()
         self.sending_in_progress = None
         self.name='gch'
+        self.billets=[]
+        b=billet.Billet(id =1, date="12/05/2021", depart="Compiegne", destination="Paris", detenteur=self.name)
+        self.billets.append(b)
+        b=billet.Billet(id =1, date="10/06/2021", depart="Paris", destination="Compiegne", detenteur=self.name)
+        self.billets.append(b)
         if self.check_mandatory_parameters():
             self.config_gui()
             self.end_initialisation()
@@ -29,6 +35,21 @@ class GCHApp(apg.Application):
         super().start()
         if self.params["bas-autosend"]:
             self.send_button()
+    def mettreDeCoteBillets(M):
+        
+    def RepondreListeBillets(MessageDemande):
+        R=MessageAvecBillets()
+        for b in self.billets:
+            R.billets.append(b)
+        R.typeDemande=MessageDemande.typeDemande
+        if R.typeDemande = 'reservation':
+            #mettreDeCoteBillets(R)
+            break
+        R.clientDestinataire=M.clientDemandeur
+        #repondreMessage(R,R.clientDestinataire)
+
+
+
     def receive(self, pld, src, dst, where):
         if self.started  and self.check_mandatory_parameters():
             self.vrb("{}.rcv(pld={}, src={}, dst={}, where={})".format(self.APP(),pld, src, dst, where), 6)
@@ -36,25 +57,22 @@ class GCHApp(apg.Application):
 
             #instance site guichet G, thread associé au site S
 
-            instanceMessage = outil.GetInstance(pld)
-            if instanceMessage == "MessageDemande":
-                received_message=msg.MessageDemande(pld,self)
+            received_message=msg.Message(pld,self)
+            if received_message.clientDestinataire() != self.name:
+                app.wrb_disperror("Guichet can't pass on a message")
+            if received_message.instance() == "MessageDemande":
                 self.info=received_message.typeDemande()
-                infoBillet=received_message.infoBillet()
-                if len(infoBillet) > 0:
-                    self.info+=" pour un billet : "+infoBillet
-                # repondreListeBillets(received_message)
-            elif instanceMessage == "MessageAccuseReception":
-                # received_message=msg.MessageAccuseReception(pld,self)
+                self.repondreListeBillets(received_message)
+            elif received_message.instance() == "MessageAccuseReception":
+
                 # validerListeBillets(received_message)
                 break
-            elif instanceMessage == "MessageSnapshot":
-                # received_message=msg.MessageSnapshot(pld,self)
+            elif received_message.instance() == "MessageSnapshot":
                 # self.info="id_message_recu = "+received_message.identifiantMessageRecu()
                 # completerSnapshotAvecClient(received_message)
                 break
             else:
-                received_message=msg.Message(pld,self)
+                received_message=msg.Msessage(pld,self)
                 self.info="Message lambda"
             if int(received_message.lmp()) > self.lport.getValue():
                 self.lport.setValue(int(received_message.lmp()))
