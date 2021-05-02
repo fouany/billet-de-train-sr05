@@ -58,25 +58,22 @@ class MessageDemande(Message):
 
 class MessageAccuseReception(Message):
     """Application-specific message MessageAccuseReception"""
-    def __init__(self, text, app, nseq=None, lmp=None, clientDemandeur=None, identifiantMessageRecu=None):
+    def __init__(self, text, app, nseq=None, lmp=None, clientDemandeur=None, identifiantMessageRecu=None, reponse=1):
         super().__init__(text,app,nseq,lmp,clientDemandeur,clientDestinataire="node1",instance="MessageAccuseReception")
-        self.fields += ["identifiantMessageRecu"]
-        self.content["identifiantMessageRecu"] = identifiantMessageRecu
+        self.fields += ["reponse"]
+        if identifiantMessageRecu != None:
+            self.content["identifiantMessageRecu"] = identifiantMessageRecu
         if len(text) > 0:
             self.parse_text(text)
     def identifiantMessageRecu(self):
         return self.content["identifiantMessageRecu"]
-
-# definition messageAvecBillets herite message
-#     typeDemande : 'consultation' ou 'reservation'
-#     billets : billet[]
-# fin definition
-
+    def reponse(self):
+        return self.content["reponse"] # 1 accepte la reservation | 0 refuse la reservation
 
 class MessageAvecBillets(Message):
-    """Application-specific message MessageDemande"""
-    def __init__(self, text, app, nseq=None, lmp=None, clientDemandeur=None, typeDemande='consultation', listeBillet=[]):
-        super().__init__(text,app,nseq,lmp,clientDemandeur,clientDestinataire="CLT3",instance="MessageAvecBillets")
+    """Application-specific message MessageAvecBillets"""
+    def __init__(self, text, app, nseq=None, lmp=None, clientDestinataire=None, typeDemande='consultation', listeBillet=[]):
+        super().__init__(text,app,nseq,lmp,"node1",clientDestinataire,instance="MessageAvecBillets")
         self.fields += ["typeDemande","listeBillet"]
         self.content["typeDemande"] = typeDemande
         self.content["listeBillet"] = listeBillet
