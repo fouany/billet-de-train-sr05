@@ -34,6 +34,8 @@ class Message(apg.msg.Message):
         return self.content["nseq"]
     def lmp(self):
         return self.content["lmp"]
+    def incLmp(self):
+        self.content["lmp"] = str(int(self.content["lmp"]) + 1)
     def clientDemandeur(self):
         return self.content["clientDemandeur"]
     def clientDestinataire(self):
@@ -42,7 +44,7 @@ class Message(apg.msg.Message):
 class MessageDemande(Message):
     """Application-specific message MessageDemande"""
     def __init__(self, text, app, nseq=None, lmp=None, clientDemandeur=None, typeDemande='consultation', infoBillet=""):
-        super().__init__(text,app,nseq,lmp,clientDemandeur,clientDestinataire="CLT3",instance="MessageDemande")
+        super().__init__(text,app,nseq,lmp,clientDemandeur,clientDestinataire="node1",instance="MessageDemande")
         self.fields += ["typeDemande","infoBillet"]
         self.content["typeDemande"] = typeDemande
         if infoBillet != None:
@@ -57,7 +59,7 @@ class MessageDemande(Message):
 class MessageAccuseReception(Message):
     """Application-specific message MessageAccuseReception"""
     def __init__(self, text, app, nseq=None, lmp=None, clientDemandeur=None, identifiantMessageRecu=None):
-        super().__init__(text,app,nseq,lmp,clientDemandeur,clientDestinataire="CLT3",instance="MessageAccuseReception")
+        super().__init__(text,app,nseq,lmp,clientDemandeur,clientDestinataire="node1",instance="MessageAccuseReception")
         self.fields += ["identifiantMessageRecu"]
         self.content["identifiantMessageRecu"] = identifiantMessageRecu
         if len(text) > 0:
