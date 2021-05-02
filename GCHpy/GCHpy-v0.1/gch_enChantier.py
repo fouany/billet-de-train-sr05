@@ -28,6 +28,10 @@ class GCHApp(apg.Application):
         self.billets.append(b)
         b=billet.Billet(id =1, date="10/06/2021", depart="Paris", destination="Compiegne", detenteur=self.name)
         self.billets.append(b)
+        self.BilletsDisponibles=[]
+        self.MessageAttente={}
+        for bi in self.billets :
+            self.BilletsDisponibles.append(bi)
         if self.check_mandatory_parameters():
             self.config_gui()
             self.end_initialisation()
@@ -36,19 +40,48 @@ class GCHApp(apg.Application):
         if self.params["bas-autosend"]:
             self.send_button()
     def mettreDeCoteBillets(M):
-        
-    def RepondreListeBillets(MessageDemande):
+        # instance site guichet G
+        for bil in M.listeBillet:
+            self.BilletsDisponibles.remove(bil)
+        self.MessageAttente[M.clientDemandeur()+" "+M.id()]= M
+
+
+    def repondreMessage(M,S):
+        # instance du site guichet G
+        M.clientDemandeur=self
+        M.type='reponse'
+        self.snd(str(M), who=self.destination_app, where=self.destination_zone)
+
+
+
+    def repondreListeBillets(MessageDemande):
         R=MessageAvecBillets()
         for b in self.billets:
             R.billets.append(b)
         R.typeDemande=MessageDemande.typeDemande
-        if R.typeDemande = 'reservation':
-            #mettreDeCoteBillets(R)
-            break
+        if R.typeDemande == 'reservation':
+            self.mettreDeCoteBillets(R)
+
         R.clientDestinataire=M.clientDemandeur
-        #repondreMessage(R,R.clientDestinataire)
+        self.repondreMessage(R,R.clientDestinataire)
 
-
+        def validerListeBillets(M):
+            if M.reponse == 0:
+                # self.annulerReservationBillets()
+                print("tmp")
+            else:
+                self.MessageAttente.pop(M.identifiantMessageRecu)
+# instance site guichet G
+    def annulerReservationBillets(identifiantMessage):
+        M=self.MessageAttente.pop(M.identifiantMessageRecu)
+        self.BilletsDisponibles.append(M.billets)
+# definition annulerReservationBillets(identifiantMessage : nombre)
+#
+#
+#     M = obtenirListeMessageAttente(identifiantMessage)
+#     G.ajouterListeBilletsDisponibles(M.billets)
+#     G.supprimerListeMessageAttente(identifiantMessage)
+# fin definition
 
     def receive(self, pld, src, dst, where):
         if self.started  and self.check_mandatory_parameters():
@@ -64,13 +97,13 @@ class GCHApp(apg.Application):
                 self.info=received_message.typeDemande()
                 self.repondreListeBillets(received_message)
             elif received_message.instance() == "MessageAccuseReception":
-
+                print("tmp")
                 # validerListeBillets(received_message)
-                break
+
             elif received_message.instance() == "MessageSnapshot":
                 # self.info="id_message_recu = "+received_message.identifiantMessageRecu()
                 # completerSnapshotAvecClient(received_message)
-                break
+                print("tmp")
             else:
                 received_message=msg.Msessage(pld,self)
                 self.info="Message lambda"
