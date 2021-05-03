@@ -51,7 +51,7 @@ mkfifo ./tmp/in6n ./tmp/out6n
 # Rediriger les pipes
 # GCH -> CLT3
 cat ./tmp/out1c > ./tmp/in1n &
-cat ./tmp/out1n | tee ./tmp/in1c > ./tmp/in4b &
+cat ./tmp/out1n | tee ./tmp/in1c > ./tmp/in4n &
 
 # CLT1 -> CLT4
 cat ./tmp/out2c > ./tmp/in2n &
