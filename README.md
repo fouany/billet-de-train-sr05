@@ -72,4 +72,6 @@ TO-DO:
 -> Snapshot
 -> README utilisation sous linux et structure architecture
 -> Diapo (PDF) pour la soutenance (checker réponse prof)
+-> Préparer démo
+-> Commenter le code
 ```
