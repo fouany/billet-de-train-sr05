@@ -7,6 +7,7 @@ sys.path.append(os.path.abspath("{}/LIBAPGpy/LIBAPGpy".format(os.environ["APG_PA
 import libapg as apg
 import msg_mod as msg
 import billet_mod as bil
+from sortedcontainers import SortedDict # à passer dans guichet
 
 class CLTApp(apg.Application):
     #
@@ -22,8 +23,9 @@ class CLTApp(apg.Application):
         self.destination_zone=self.com.hst_air()
         self.nseq = 0
         self.lport = lport.lport()
-        self.info = "Bonjour !"
+        self.info = "Bonjour !\\n"
         self.msg_trans = []
+        self.arrayBillet = [bil.Billet("",self,"2021/06/30","Paris Gare du Nord (FR)","Berlin (D)"),bil.Billet("",self,"2021/07/01","Paris Gare du Nord (FR)","Londres (UK)")]
         self.liste_billets = []
         self.liste_billets_attente = []
         self.sending_in_progress = None
@@ -65,7 +67,7 @@ class CLTApp(apg.Application):
 
             # si n'est pas destinataire alors transfert du message
             if received_message.clientDestinataire() != self.name:
-                self.info="(à transmettre)"
+                self.info="(à transmettre)\\n"
                 while not self.transfert(received_message,pld):
                     time.sleep(100)
             # si on est destinataire on receptionne le message
@@ -73,22 +75,32 @@ class CLTApp(apg.Application):
                 # simule un guichet en attendant les guichets
                 if received_message.instance() == "MessageDemande":
                     received_message=msg.MessageDemande(pld,self)
-                    listeBillet = self.setStrBillets([bil.Billet("",self,"30/06/2021","Paris CDG (FR)","New York (USA)"),bil.Billet("",self,"1/07/2021","Paris CDG (FR)","Londres (UK)")])
+                    arrayMatchedBillets = []
+                    filtres = self.parse_info_billet(received_message.infoBillet())
+                    for x in self.arrayBillet:
+                        if len(filtres) == 0:
+                            arrayMatchedBillets += [x]
+                        else:
+                            if filtres.__contains__("destination") and x.destination().find(filtres["destination"]) > -1:
+                                arrayMatchedBillets += [x]
+                            elif filtres.__contains__("depart") and x.depart().find(filtres["depart"]) > -1:
+                                arrayMatchedBillets += [x]
+                            elif filtres.__contains__("datemax") and filtres.__contains__("datemin") and  x.date() >= filtres["datemin"] and x.date() <= filtres["datemax"]:
+                                arrayMatchedBillets += [x]
+                            elif (not filtres.__contains__("datemax")) and filtres.__contains__("datemin") and  x.date() >= filtres["datemin"]:
+                                arrayMatchedBillets += [x]
+                            elif (not filtres.__contains__("datemin")) and filtres.__contains__("datemax") and  x.date() <= filtres["datemax"]:
+                                arrayMatchedBillets += [x]
+                    listeBillet = self.setStrBillets(arrayMatchedBillets)
                     # on répond au demandeur donc nouveau_message.destinataire = ancien_message.demandeur
                     while self.send(msg.MessageAvecBillets("",self, self.nseq, lmp = self.lport.getValue(), typeDemande=received_message.typeDemande(), clientDestinataire = received_message.clientDemandeur(), listeBillet=listeBillet)):
                         time.sleep(100)
-                    self.info=received_message.typeDemande()
                 elif received_message.instance() == "MessageAvecBillets":
                     self.gerer_billets(msg.MessageAvecBillets(pld,self))
                 # les messages qu'un client n'est pas censés recevoir émettent une erreur
                 else:
-                    self.info = "Le site "+received_message.clientDemandeur()+" vous a envoyé un message du type"+received_message.instance()
-
-            # affichage
-            self.gui.tk_instr("""
-self.received_lport.config(text = 'H : {}')
-self.received_info.config(text = '{}')
-""".format(self.lport.getValue(),self.info))
+                    self.info = "Le site "+received_message.clientDemandeur()+" vous a envoyé un message du type"+received_message.instance()+"\\n"
+            self.print_info()
         else:
             self.vrb_dispwarning("Application {} not started".format(self.APP()))
     #
@@ -111,6 +123,18 @@ self.received_info.config(text = '{}')
         if str_array_billets[-1] == ";":
             del(array_billets[len(array_billets)-1])
         return array_billets
+    def parse_info_billet(self,txt):
+        msg = txt.split("+")
+        arr = SortedDict()
+        if txt[0] == "+":
+            del(msg[0])
+        if txt[-1] == "+":
+            del(msg[len(msg)-1])
+        for elt in msg:
+            l=str(elt).split("|", 1)
+            if len(elt)>0:
+                arr[l[0]] = l[1]
+        return arr
     #
     # Transfert de messages
     #
@@ -139,47 +163,33 @@ self.received_info.config(text = '{}')
         if message.typeDemande() == "reservation":
             self.config_gui_masquer_boutons()
             self.liste_billets_attente = []
-            self.info = "Veuillez valider la réservation de :"
+            self.info = "Veuillez valider la réservation de :\\n"
             self.msg_reservation_id = message.id()
-            self.gui.tk_instr("""
-self.validation_zone = tk.Frame(self.clt_app_zone)
-
-self.accepter_btn = tk.Button(self.validation_zone, text="Valider", command=partial(self.app().accepte_reservation,1), activebackground="red", activeforeground="red", width=20)
-self.accepter_btn.pack(side="left")
-
-self.annuler_btn = tk.Button(self.validation_zone, text="Annuler", command=partial(self.app().accepte_reservation,0), activebackground="red", activeforeground="red", width=20)
-self.annuler_btn.pack(side="left")
-
-self.validation_zone.pack(fill="both", expand="yes", side="top", pady=5)
-""")
+            self.config_gui_ajout_validation()
         else:
-            self.info = "Vous consultez :"
+            self.info = "Vous consultez :\\n"
         array_bil = self.getArrayBillets(message.listeBillet())
         for str_bil in array_bil:
             billet = bil.Billet(str_bil,self)
             if message.typeDemande() == "reservation":
                 self.liste_billets_attente.append(billet)
-            self.info += """{} le {} partant de {} pour {}""".format(billet.id(),billet.date(),billet.depart(),billet.destination())
+            self.info += """{} le {} partant de {} pour {}\\n""".format(billet.id(),billet.date(),billet.depart(),billet.destination())
 
     #
     # Gére la réponse de l'utilisateur face au choix de réservation
     #
     def accepte_reservation(self,oui_ou_non):
-        self.gui.tk_instr("""
-self.accepter_btn.pack_forget()
-self.annuler_btn.pack_forget()
-self.validation_zone.pack_forget()
-""")
+        self.config_gui_masquer_validation()
         if oui_ou_non:
-            self.info = "Vous avez accepté la réservation"
+            self.info = "Vous avez accepté la réservation\\n"
             self.liste_billets += self.liste_billets_attente
         else:
-            self.info = "Vous avez rejeté la réservation"
+            self.info = "Vous avez rejeté la réservation\\n"
         while self.send(msg.MessageAccuseReception("",self, self.nseq, lmp = self.lport.getValue(), clientDemandeur = self.name, identifiantMessageRecu = self.msg_reservation_id, reponse=oui_ou_non)):
             time.sleep(100)
         self.liste_billets_attente = []
         self.config_gui_ajout_boutons()
-        self.gui.tk_instr("""self.received_info.config(text = '{}')""".format(self.info))
+        self.print_info()
     #
     # Emmission de messages
     #
@@ -200,21 +210,60 @@ self.validation_zone.pack_forget()
     #
     # Action du bouton de consultation
     #
-    def send_button_consultation(self):
-            self.send(msg.MessageDemande("",self, self.nseq, lmp = self.lport.getValue(), clientDemandeur = self.name))
+    def send_button_consultation(self,dest,dep,datemin,datemax):
+            infoBillet = "+"
+            dest = dest.get()
+            if len(dest) > 0:
+                infoBillet += "destination|{}+".format(dest)
+            dep = dep.get()
+            if len(dep) > 0:
+                infoBillet += "depart|{}+".format(dep)
+            datemin = datemin.get()
+            if len(datemin) > 0:
+                infoBillet += "datemin|{}+".format(datemin)
+            datemax = datemax.get()
+            if len(datemax) > 0:
+                infoBillet += "datemax|{}+".format(datemax)
+            self.send(msg.MessageDemande("",self, self.nseq, lmp = self.lport.getValue(), clientDemandeur = self.name, infoBillet = infoBillet))
     #
     # Action du bouton de réservation
     #
-    def send_button_reservation(self):
-            self.send(msg.MessageDemande("",self, self.nseq, lmp = self.lport.getValue(), clientDemandeur = self.name, typeDemande = "reservation"))
+    def send_button_reservation(self,dest,dep,datemin,datemax):
+            infoBillet = "+"
+            dest = dest.get()
+            if len(dest) > 0:
+                infoBillet += "destination|{}+".format(dest)
+            dep = dep.get()
+            if len(dep) > 0:
+                infoBillet += "depart|{}+".format(dep)
+            datemin = datemin.get()
+            if len(datemin) > 0:
+                infoBillet += "datemin|{}+".format(datemin)
+            datemax = datemax.get()
+            if len(datemax) > 0:
+                infoBillet += "datemax|{}+".format(datemax)
+            self.send(msg.MessageDemande("",self, self.nseq, lmp = self.lport.getValue(), clientDemandeur = self.name, infoBillet = infoBillet, typeDemande = "reservation"))
     #
     # Afficher les billets possédés
     #
     def afficher_posseder(self):
-        self.info = "Vous possédez :"
+        self.lport.incr()
+        self.info = "Vous possédez :\\n"
         for billet in self.liste_billets:
-            self.info += """{} le {} partant de {} pour {}""".format(billet.id(),billet.date(),billet.depart(),billet.destination())
-        self.gui.tk_instr("""self.received_info.config(text = '{}')""".format(self.info))
+            self.info += """{} le {} partant de {} pour {}\\n""".format(billet.id(),billet.date(),billet.depart(),billet.destination())
+        self.print_info()
+    #
+    # Imprimer self.info sur l'interface graphique
+    #
+    def print_info(self):
+        self.gui.tk_instr("""
+self.received_lport.config(text = 'H : {}')
+self.received_info.config(state='normal')
+self.received_info.insert(tk.INSERT,'{}')
+self.received_info.config(state='disabled')
+""".format(self.lport.getValue(),self.info))
+
+        self.info = ""
     #
     # Ajout des boutons d'actions
     #
@@ -222,19 +271,51 @@ self.validation_zone.pack_forget()
         self.gui.tk_instr("""
 self.bouton_zone = tk.Frame(self.clt_app_zone)
 
+self.form_zone = tk.LabelFrame(self.bouton_zone,text='Formulaire de recherche de billets')
+
+self.depart_label = tk.Label(self.form_zone, width=10,text='Depart')
+self.depart_label.pack(side="left")
+self.var_depart = tk.StringVar()
+self.var_depart.set("")
+self.depart_entry = tk.Entry(self.form_zone, textvariable = self.var_depart)
+self.depart_entry.pack(side="left", fill="both", expand="yes")
+
+self.destination_label = tk.Label(self.form_zone, width=10,text='Destination')
+self.destination_label.pack(side="left")
+self.var_destination = tk.StringVar()
+self.var_destination.set("")
+self.destination_entry = tk.Entry(self.form_zone, textvariable = self.var_destination)
+self.destination_entry.pack(side="left", fill="both", expand="yes")
+
+self.datemin_label = tk.Label(self.form_zone, width=10,text='Entre le ')
+self.datemin_label.pack(side="left")
+self.var_datemin = tk.StringVar()
+self.var_datemin.set("")
+self.datemin_entry = tk.Entry(self.form_zone, textvariable = self.var_datemin)
+self.datemin_entry.pack(side="left", fill="both", expand="yes")
+
+self.datemax_label = tk.Label(self.form_zone, width=10,text='et le ')
+self.datemax_label.pack(side="left")
+self.var_datemax = tk.StringVar()
+self.var_datemax.set("")
+self.datemax_entry = tk.Entry(self.form_zone, textvariable = self.var_datemax)
+self.datemax_entry.pack(side="left", fill="both", expand="yes")
+
+self.form_zone.pack(fill="both", expand="yes", side="top", pady=5)
+
 self.sending_posseder_btn = tk.Button(self.bouton_zone, text="Vos billets", command=partial(self.app().afficher_posseder), activebackground="red", activeforeground="red", width=20)
 self.sending_posseder_btn.pack(side="left")
 
-self.sending_consulter_btn = tk.Button(self.bouton_zone, text="Consulter guichet", command=partial(self.app().send_button_consultation), activebackground="red", activeforeground="red", width=20)
+self.sending_consulter_btn = tk.Button(self.bouton_zone, text="Consulter guichet", command=partial(self.app().send_button_consultation,self.var_destination,self.var_depart,self.var_datemin,self.var_datemax), activebackground="red", activeforeground="red", width=20)
 self.sending_consulter_btn.pack(side="left")
 
-self.sending_reserver_btn = tk.Button(self.bouton_zone, text="Réserver", command=partial(self.app().send_button_reservation), activebackground="red", activeforeground="red", width=20)
+self.sending_reserver_btn = tk.Button(self.bouton_zone, text="Réserver", command=partial(self.app().send_button_reservation,self.var_destination,self.var_depart,self.var_datemin,self.var_datemax), activebackground="red", activeforeground="red", width=20)
 self.sending_reserver_btn.pack(side="left")
 
 self.bouton_zone.pack(fill="both", expand="yes", side="top", pady=5)
 """)
     #
-    # Ajout des boutons d'actions
+    # Masquer les boutons d'actions
     #
     def config_gui_masquer_boutons(self):
         self.gui.tk_instr("""
@@ -242,6 +323,30 @@ self.sending_posseder_btn.pack_forget()
 self.sending_consulter_btn.pack_forget()
 self.sending_reserver_btn.pack_forget()
 self.bouton_zone.pack_forget()
+""")
+    #
+    # Ajouter les boutons de validation
+    #
+    def config_gui_ajout_validation(self):
+        self.gui.tk_instr("""
+self.validation_zone = tk.Frame(self.clt_app_zone)
+
+self.accepter_btn = tk.Button(self.validation_zone, text="Valider", command=partial(self.app().accepte_reservation,1), activebackground="red", activeforeground="red", width=20)
+self.accepter_btn.pack(side="left")
+
+self.annuler_btn = tk.Button(self.validation_zone, text="Annuler", command=partial(self.app().accepte_reservation,0), activebackground="red", activeforeground="red", width=20)
+self.annuler_btn.pack(side="left")
+
+self.validation_zone.pack(fill="both", expand="yes", side="top", pady=5)
+""")
+    #
+    # Masquer les boutons de validation
+    #
+    def config_gui_masquer_validation(self):
+        self.gui.tk_instr("""
+self.accepter_btn.pack_forget()
+self.annuler_btn.pack_forget()
+self.validation_zone.pack_forget()
 """)
     #
     # Configuration de l'interface graphique
@@ -269,11 +374,12 @@ self.lport_zone.pack(fill="both", expand="yes", side="top", pady=5)
         self.gui.tk_instr("""
 self.info_zone = tk.Frame(self.clt_app_zone)
 
-self.received_info = tk.Label(self.info_zone,text="{}")
+self.received_info = tk.Text(self.info_zone,wrap="word")
 self.received_info.pack(side="left", expand="yes", fill="y", pady=2)
 
 self.info_zone.pack(fill="both", expand="yes", side="top", pady=5)
-""".format(self.info))
+""".format())
+        self.print_info()
         # ajout des boutons d'actions
         self.config_gui_ajout_boutons()
         # pack de notre propre interface

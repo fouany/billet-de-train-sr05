@@ -44,7 +44,7 @@ class Message(apg.msg.Message):
 class MessageDemande(Message):
     """Application-specific message MessageDemande"""
     def __init__(self, text, app, nseq=None, lmp=None, clientDemandeur=None, typeDemande='consultation', infoBillet=""):
-        super().__init__(text,app,nseq,lmp,clientDemandeur,clientDestinataire="node1",instance="MessageDemande")
+        super().__init__(text,app,nseq,lmp,clientDemandeur,clientDestinataire="gch",instance="MessageDemande")
         self.fields += ["typeDemande","infoBillet"]
         self.content["typeDemande"] = typeDemande
         if infoBillet != None:
@@ -59,7 +59,7 @@ class MessageDemande(Message):
 class MessageAccuseReception(Message):
     """Application-specific message MessageAccuseReception"""
     def __init__(self, text, app, nseq=None, lmp=None, clientDemandeur=None, identifiantMessageRecu=None, reponse=1):
-        super().__init__(text,app,nseq,lmp,clientDemandeur,clientDestinataire="node1",instance="MessageAccuseReception")
+        super().__init__(text,app,nseq,lmp,clientDemandeur,clientDestinataire="gch",instance="MessageAccuseReception")
         self.fields += ["reponse"]
         if identifiantMessageRecu != None:
             self.content["identifiantMessageRecu"] = identifiantMessageRecu
@@ -73,7 +73,7 @@ class MessageAccuseReception(Message):
 class MessageAvecBillets(Message):
     """Application-specific message MessageAvecBillets"""
     def __init__(self, text, app, nseq=None, lmp=None, clientDestinataire=None, typeDemande='consultation', listeBillet=[]):
-        super().__init__(text,app,nseq,lmp,"node1",clientDestinataire,instance="MessageAvecBillets")
+        super().__init__(text,app,nseq,lmp,"gch",clientDestinataire,instance="MessageAvecBillets")
         self.fields += ["typeDemande","listeBillet"]
         self.content["typeDemande"] = typeDemande
         self.content["listeBillet"] = listeBillet
