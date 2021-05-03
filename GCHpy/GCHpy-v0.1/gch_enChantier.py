@@ -50,15 +50,6 @@ class GCHApp(apg.Application):
     def annulerReservationBillets(identifiantMessage):
         M=self.MessageAttente.pop(M.identifiantMessageRecu)
         self.BilletsDisponibles.append(M.billets)
-        #left to do ?!
-        # instance site guichet G
-        # definition annulerReservationBillets(identifiantMessage : nombre)
-        #     arreterDelaiMaxAttenteReservation(identifiantMessage)
-        #     soit M : messageAvecBillets
-        #     M = obtenirListeMessageAttente(identifiantMessage)
-        #     G.ajouterListeBilletsDisponibles(M.billets)
-        #     G.supprimerListeMessageAttente(identifiantMessage)
-        # fin definition
 
     def mettreDeCoteBillets(M):
         # instance site guichet G
@@ -76,15 +67,12 @@ class GCHApp(apg.Application):
         R.clientDestinataire=M.clientDemandeur
         self.repondreMessage(R,R.clientDestinataire)
 
-
-
     def validerListeBillets(M):
         if M.reponse == 0:
             # self.annulerReservationBillets()
             print("tmp")
         else:
             self.MessageAttente.pop(M.identifiantMessageRecu)
-
 
 
     def receive(self, pld, src, dst, where):
