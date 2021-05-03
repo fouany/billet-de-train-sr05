@@ -19,14 +19,24 @@ class GCHApp(apg.Application):
         self.destination_app=self.params["bas-dest"]
         self.destination_zone=self.com.hst_air()
         self.period = float(self.params["bas-delay"])
+        self.info = "Bonjour !\\n"
         self.nseq = 0
         self.lport = lport.lport()
         self.sending_in_progress = None
         self.name='gch'
         self.billets=[]
-        b=billet.Billet(id =1, date="12/05/2021", depart="Compiegne", destination="Paris", detenteur=self.name)
+        #Billet par defaux:
+        b=billet.Billet("",self, date="12/05/2021", depart="Compiegne (FR)", destination="Paris Gare du Nord (FR)", detenteur=self.name)
         self.billets.append(b)
-        b=billet.Billet(id =1, date="10/06/2021", depart="Paris", destination="Compiegne", detenteur=self.name)
+        b=billet.Billet("",self, date="10/06/2021", depart="Paris Gare du Nord (FR)", destination="Compiegne (FR)", detenteur=self.name)
+        self.billets.append(b)
+        b=billet.Billet("",self, date="13/05/2021", depart="Lyon Part Dieu (FR)", destination="ST Etienne (FR)", detenteur=self.name)
+        self.billets.append(b)
+        b=billet.Billet("",self, date="13/05/2021", depart="Lyon Part Dieu (FR)", destination="Paris Gare du Nord (FR)", detenteur=self.name)
+        self.billets.append(b)
+        b=billet.Billet("",self, date="25/05/2021", depart="Lyon Part Dieu (FR)", destination="Paris Gare du Nord (FR)", detenteur=self.name)
+        self.billets.append(b)
+        b=billet.Billet("",self, date="25/05/2021", depart="Compiegne (FR)", destination="Paris Gare du Nord (FR)", detenteur=self.name)
         self.billets.append(b)
         self.BilletsDisponibles=[]
         self.MessageAttente={}
@@ -113,60 +123,103 @@ self.received_lport.config(text = 'H : {}')
 
         else:
             self.vrb_dispwarning("Application {} not started".format(self.APP()))
-    #A SUPRIMER de l'interface Graphique:
-    def send_button(self, graphic_msg=None, graphic_who=None,graphic_where=None,graphic_period=None):
-        time.sleep (100)
-    #A suprimer de l'interface Graphique
-    def stop_button(self):
-        time.sleep (100)
+
+    #
+    # Afficher les billets possédés
+    #
+    def afficher_posseder(self):
+        self.lport.incr()
+        self.info = "Vous possédez :\\n"
+        for billet in self.BilletsDisponibles:
+            self.info += """{} le {} partant de {} pour {}\\n""".format(billet.id(),billet.date(),billet.depart(),billet.destination())
+        self.print_info()
+    #
+    # Lancée la snapchot
+    #
+    def Lancee_Snapshot(self):
+        self.lport.incr()
+        self.info = "Snapshot en cours\\n"
+        #self.Snapshot()
+        self.print_info()
+        self.config_gui_masquer_boutons()
+        #en attente d'implementation
+        for i in range(3):
+            self.info = "...\\n"
+            self.print_info()
+            time.sleep(1)
+        self.config_gui_ajout_boutons()
+
+    #
+    # Imprimer self.info sur l'interface graphique
+    #
+    def print_info(self):
+        self.gui.tk_instr("""
+self.received_lport.config(text = 'H : {}')
+self.received_info.config(state='normal')
+self.received_info.insert(tk.INSERT,'{}')
+self.received_info.config(state='disabled')
+""".format(self.lport.getValue(),self.info))
+
+        self.info = ""
+    #
+    # Ajout des boutons d'actions
+    #
+    def config_gui_ajout_boutons(self):
+        self.gui.tk_instr("""
+self.bouton_zone = tk.Frame(self.clt_app_zone)
+
+self.form_zone = tk.LabelFrame(self.bouton_zone,text='Formulaire de recherche de billets')
+
+self.form_zone.pack(fill="both", expand="yes", side="top", pady=5)
+
+self.sending_posseder_btn = tk.Button(self.bouton_zone, text="Vos billets", command=partial(self.app().afficher_posseder), activebackground="red", activeforeground="red", width=20)
+self.sending_posseder_btn.pack(side="left")
+self.sending_snapshot_btn = tk.Button(self.bouton_zone, text="Realiser une snapshot", command=partial(self.app().Lancee_Snapshot), activebackground="red", activeforeground="red", width=20)
+self.sending_snapshot_btn.pack(side="left")
+self.bouton_zone.pack(fill="both", expand="yes", side="top", pady=5)
+""")
+    #
+    # Masquer les boutons d'actions
+    #
+    def config_gui_masquer_boutons(self):
+        self.gui.tk_instr("""
+self.sending_posseder_btn.pack_forget()
+self.sending_snapshot_btn.pack_forget()
+self.bouton_zone.pack_forget()
+""")
     def config_gui(self):
-        """ GUI settings """
+        # suppression des interfaces inutiles
         self.gui.tk_instr("""
-self.app_zone = tk.LabelFrame(self.root, text="{}")
-self.emission_zone = tk.LabelFrame(self.app_zone, text="Emission")
-self.var_msg_send = tk.StringVar()
-self.var_msg_send.set("{}")
-self.msg = tk.Entry(self.emission_zone, width=32, textvariable = self.var_msg_send)
-self.msg.pack(side="left")
-self.var_who_send = tk.StringVar()
-self.var_who_send.set("{}")
-self.who = tk.Entry(self.emission_zone, width=10, textvariable = self.var_who_send)
-self.who.pack(side="left")
-self.var_where_send = tk.StringVar()
-self.var_where_send.set("{}")
-self.where = tk.Entry(self.emission_zone, width=10, textvariable = self.var_where_send)
-self.where.pack(side="left")
-self.var_sending_period = tk.StringVar()
-self.var_sending_period.set("{}")
-self.sending_period= tk.Entry(self.emission_zone, width=3, textvariable=self.var_sending_period)
-self.sending_period.pack(side="left")
-self.sending_button = tk.Button(self.emission_zone, text="Auto-send", command=partial(self.app().send_button,self.var_msg_send, self.var_who_send, self.var_where_send, self.var_sending_period), activebackground="red", foreground="red", width=10)
-self.stop_sending_button = tk.Button(self.emission_zone, text="Stop sending", command=partial(self.app().stop_button), activebackground="green", foreground="red", width=10)
-self.sending_button.pack(side="left")
-self.stop_sending_button.pack(side="left")
-self.reception=tk.LabelFrame(self.app_zone, text="Received message")
-self.received_source_label=tk.Label(self.reception, text="Message reçu de")
-self.received_source=tk.Label(self.reception, text="-", width=4)
-self.received_payload_label = tk.Label(self.reception,text=":")
-self.received_payload = tk.Label(self.reception,text="-",width=40)
-self.received_nseq_label = tk.Label(self.reception,text="nseq : ")
-self.received_nseq = tk.Label(self.reception,text="-", width=4)
-self.received_source_label.pack(side="left")
-self.received_source.pack(side="left")
-self.received_payload_label.pack(side="left")
-self.received_payload.pack(side="left")
-self.received_nseq_label.pack(side="left")
-self.received_nseq.pack(side="left")
-self.emission_zone.pack(side="top", fill=tk.BOTH, expand=1)
-self.reception.pack(side="top", fill=tk.BOTH, expand=1)
-self.app_zone.pack(fill="both", expand="yes", side="top", pady=5)
-""".format(self.APP(),self.msg, self.destination_app, self.destination_zone, self.period)) # Graphic interface (interpreted if no option notk)
-#ajout de l'horloge de Lamport
+self.airplug_zone.pack_forget()
+self.send_zone.pack_forget()
+self.subscribe_zone.pack_forget()
+self.receive_zone.pack_forget()
+""")
+        # ajout de notre propre interface : app_zone
+        self.gui.tk_instr("""self.clt_app_zone = tk.LabelFrame(self.root, text="Bienvenue !", width=40)""")
+        # ajout de la zone de l'horloge de Lamport
         self.gui.tk_instr("""
-self.lport_zone = tk.LabelFrame(self.root, text="Local Lamport's clock")
+self.lport_zone = tk.LabelFrame(self.clt_app_zone, text="Local Lamport's clock")
+
 self.received_lport = tk.Label(self.lport_zone,text="{}")
 self.received_lport.pack(side="left", expand="yes", fill="y", pady=2)
-self.lport_zone.pack(fill="both", expand="yes", side="top", pady=5)""".format(self.lport.getValue()))
+
+self.lport_zone.pack(fill="both", expand="yes", side="top", pady=5)
+""".format(self.lport.getValue()))
+        # ajout de la zone d'information
+        self.gui.tk_instr("""
+self.info_zone = tk.Frame(self.clt_app_zone)
+
+self.received_info = tk.Text(self.info_zone,wrap="word")
+self.received_info.pack(side="left", expand="yes", fill="y", pady=2)
+
+self.info_zone.pack(fill="both", expand="yes", side="top", pady=5)
+""".format())
+        self.print_info()
+        # ajout des boutons d'actions
+        self.config_gui_ajout_boutons()
+        # pack de notre propre interface
+        self.gui.tk_instr("""self.clt_app_zone.pack(side="left",fill="both")""")
 
 app = GCHApp()
 if app.params["auto"]:
