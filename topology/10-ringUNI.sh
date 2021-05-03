@@ -6,12 +6,12 @@ killall tee
 rm ./tmp/*
 
 # Créer les pipes
-mkfifo ./tmp/in1a ./tmp/out1a
-mkfifo ./tmp/in1b ./tmp/out1b
+mkfifo ./tmp/in1c ./tmp/out1c
+mkfifo ./tmp/in1n ./tmp/out1n
 mkfifo ./tmp/in2a ./tmp/out2a
-mkfifo ./tmp/in2b ./tmp/out2b
-mkfifo ./tmp/in3a ./tmp/out3a
-mkfifo ./tmp/in3b ./tmp/out3b
+mkfifo ./tmp/in2n ./tmp/out2n
+mkfifo ./tmp/in3c ./tmp/out3c
+mkfifo ./tmp/in3n ./tmp/out3n
 mkfifo ./tmp/in4c ./tmp/out4c
 mkfifo ./tmp/in4n ./tmp/out4n
 mkfifo ./tmp/in5c ./tmp/out5c
@@ -31,16 +31,16 @@ mkfifo ./tmp/in10n ./tmp/out10n
 
 # Créer les apps et redirection de stdin et out de chacune
 # Noeud 1
-./gch.py --auto --ident=gch --whatwho --bas-dest=NET < ./tmp/in1a > ./tmp/out1a &
-./net.py --auto --ident=gch --whatwho < ./tmp/in1b > ./tmp/out1b &
+./gch.py --auto --ident=gch --whatwho --bas-dest=NET < ./tmp/in1c > ./tmp/out1c &
+./net.py --auto --ident=gch --whatwho < ./tmp/in1n > ./tmp/out1n &
 
 # Noeud 2
 ./clt.py --auto --ident=clt1 --whatwho --bas-dest=NET < ./tmp/in2a > ./tmp/out2a &
-./net.py --auto --ident=clt1 --whatwho  < ./tmp/in2b > ./tmp/out2b &
+./net.py --auto --ident=clt1 --whatwho  < ./tmp/in2n > ./tmp/out2n &
 
 # Noeud 3
-./clt.py --auto --ident=clt2 --whatwho --bas-dest=NET < ./tmp/in3a > ./tmp/out3a &
-./net.py --auto --ident=clt2 --whatwho < ./tmp/in3b > ./tmp/out3b &
+./clt.py --auto --ident=clt2 --whatwho --bas-dest=NET < ./tmp/in3c > ./tmp/out3c &
+./net.py --auto --ident=clt2 --whatwho < ./tmp/in3n > ./tmp/out3n &
 
 # Noeud 4
 ./clt.py --auto --ident=clt3 --whatwho --bas-dest=NET < ./tmp/in4c > ./tmp/out4c &
@@ -73,14 +73,14 @@ mkfifo ./tmp/in10n ./tmp/out10n
 
 
 # Rediriger les pipes 1-> 2 - > ...
-cat ./tmp/out1a > ./tmp/in1b &
-cat ./tmp/out1b | tee ./tmp/in1a > ./tmp/in2b &
+cat ./tmp/out1c > ./tmp/in1n &
+cat ./tmp/out1n | tee ./tmp/in1c > ./tmp/in2n &
 
-cat ./tmp/out2a > ./tmp/in2b &
-cat ./tmp/out2b | tee ./tmp/in2a > ./tmp/in3b &
+cat ./tmp/out2a > ./tmp/in2n &
+cat ./tmp/out2n | tee ./tmp/in2a > ./tmp/in3n &
 
-cat ./tmp/out3a > ./tmp/in3b &
-cat ./tmp/out3b | tee ./tmp/in3a > ./tmp/in4n &
+cat ./tmp/out3c > ./tmp/in3n &
+cat ./tmp/out3n | tee ./tmp/in3c > ./tmp/in4n &
 
 cat ./tmp/out4c > ./tmp/in4n &
 cat ./tmp/out4n | tee ./tmp/in4c > ./tmp/in5b &
@@ -101,4 +101,4 @@ cat ./tmp/out9c > ./tmp/in9n &
 cat ./tmp/out9n | tee ./tmp/in9c > ./tmp/in10b &
 
 cat ./tmp/out10c > ./tmp/in10n &
-cat ./tmp/out10n | tee ./tmp/in10c > ./tmp/in1b &
+cat ./tmp/out10n | tee ./tmp/in10c > ./tmp/in1n &
