@@ -69,8 +69,7 @@ class GCHApp(apg.Application):
 
     def repondreListeBillets(MessageDemande):
         R=MessageAvecBillets()
-        for b in self.billets:
-            R.billets.append(b)
+        R.billets=outil.setStrBillets(self.billets())
         R.typeDemande=MessageDemande.typeDemande
         if R.typeDemande == 'reservation':
             self.mettreDeCoteBillets(R)
@@ -139,15 +138,14 @@ self.received_lport.config(text = 'H : {}')
     def Lancee_Snapshot(self):
         self.lport.incr()
         self.info = "Snapshot en cours\\n"
-        #self.Snapshot()
         self.print_info()
         self.config_gui_masquer_boutons()
         #en attente d'implementation
         for i in range(3):
             self.info = "...\\n"
             self.print_info()
-            time.sleep(1)
-        self.config_gui_ajout_boutons()
+            time.sleep(10)
+        self.config_gui_ajout_boutons
 
     #
     # Imprimer self.info sur l'interface graphique

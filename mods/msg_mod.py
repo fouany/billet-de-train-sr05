@@ -72,7 +72,7 @@ class MessageAccuseReception(Message):
 
 class MessageAvecBillets(Message):
     """Application-specific message MessageAvecBillets"""
-    def __init__(self, text, app, nseq=None, lmp=None, clientDestinataire=None, typeDemande='consultation', listeBillet=[]):
+    def __init__(self, text, app, nseq=None, lmp=None, clientDestinataire=None, typeDemande='consultation', listeBillet=""):
         super().__init__(text,app,nseq,lmp,"gch",clientDestinataire,instance="MessageAvecBillets")
         self.fields += ["typeDemande","listeBillet"]
         self.content["typeDemande"] = typeDemande

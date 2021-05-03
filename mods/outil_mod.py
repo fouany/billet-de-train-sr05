@@ -8,5 +8,23 @@ def GetNode(msg,type):
     m=msg.find('^')
     msg=msg[:m]
     return msg
-# ligne="^appnet~CTL^clientDemendeur~NET^clientTransmetteur~Net^Imp~5^nseq~5^instance~Hello Word^type~requete^typeDemande~consultation^"
-# print (GetNode(ligne,'clientTransmetteur'))
+#
+# Convertisseur d'un array de Billets en string
+# à passer dans guichet
+#
+def setStrBillets(array_billets):
+    str = ";"
+    for billet in array_billets:
+        str+="{}{}".format(billet.str(),";")
+    return str
+#
+# Convertisseur d'un string en array de Billets
+# à passer dans guichet
+#
+def getArrayBillets(str_array_billets):
+    array_billets = str_array_billets.split(";")
+    if str_array_billets[0] == ";":
+        del(array_billets[0])
+    if str_array_billets[-1] == ";":
+        del(array_billets[len(array_billets)-1])
+    return array_billets
