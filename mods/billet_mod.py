@@ -30,6 +30,19 @@ class Billet:
         return self.content["destination"]
     def detenteur(self):
         return self.content["detenteur"]
+    def setDetenteur(self,detenteur):
+        self.content["detenteur"] = detenteur
+    def get(self,attribut):
+        if attribut == "id":
+            return self.content["id"]
+        if attribut == "date" or attribut == "datemin" or attribut == "datemax":
+            return self.content["date"]
+        if attribut == "depart":
+            return self.content["depart"]
+        if attribut == "destination" :
+            return self.content["destination"]
+        if attribut == "detenteur":
+            return self.content["detenteur"]
     # methodes pour passer l'objet dans les messages
     def parse_text(self,txt):
         self.app().vrb("apg.msg.parse_text(text={})".format(txt),6)

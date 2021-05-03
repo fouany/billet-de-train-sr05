@@ -60,7 +60,8 @@ class MessageAccuseReception(Message):
     """Application-specific message MessageAccuseReception"""
     def __init__(self, text, app, nseq=None, lmp=None, clientDemandeur=None, identifiantMessageRecu=None, reponse=1):
         super().__init__(text,app,nseq,lmp,clientDemandeur,clientDestinataire="gch",instance="MessageAccuseReception")
-        self.fields += ["reponse"]
+        self.fields += ["identifiantMessageRecu","reponse"]
+        self.content["reponse"] = reponse
         if identifiantMessageRecu != None:
             self.content["identifiantMessageRecu"] = identifiantMessageRecu
         if len(text) > 0:

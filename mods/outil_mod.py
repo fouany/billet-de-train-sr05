@@ -1,3 +1,4 @@
+from sortedcontainers import SortedDict
 
 def GetInstance(msg):
     return GetNode(msg,'instance')
@@ -28,3 +29,19 @@ def getArrayBillets(str_array_billets):
     if str_array_billets[-1] == ";":
         del(array_billets[len(array_billets)-1])
     return array_billets
+
+#
+# Parse un string de critères de billets
+#
+def parse_info_billet(txt):
+    msg = txt.split("+")
+    arr = SortedDict()
+    if txt[0] == "+":
+        del(msg[0])
+    if txt[-1] == "+":
+        del(msg[len(msg)-1])
+    for elt in msg:
+        l=str(elt).split("|", 1)
+        if len(elt)>0:
+            arr[l[0]] = l[1]
+    return arr

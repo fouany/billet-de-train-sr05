@@ -6,6 +6,7 @@ import clt_mod_lport as lport
 sys.path.append(os.path.abspath("{}/LIBAPGpy/LIBAPGpy".format(os.environ["APG_PATH"])))
 import libapg as apg
 import msg_mod as msg
+import outil_mod as outil
 import billet_mod as bil
 from sortedcontainers import SortedDict # à passer dans guichet
 
@@ -67,35 +68,11 @@ class CLTApp(apg.Application):
 
             # si n'est pas destinataire alors transfert du message
             if received_message.clientDestinataire() != self.name:
-                self.info="(à transmettre)\\n"
                 while not self.transfert(received_message,pld):
                     time.sleep(100)
             # si on est destinataire on receptionne le message
             else:
-                # simule un guichet en attendant les guichets
-                if received_message.instance() == "MessageDemande":
-                    received_message=msg.MessageDemande(pld,self)
-                    arrayMatchedBillets = []
-                    filtres = self.parse_info_billet(received_message.infoBillet())
-                    for x in self.arrayBillet:
-                        if len(filtres) == 0:
-                            arrayMatchedBillets += [x]
-                        else:
-                            if filtres.__contains__("destination") and x.destination().find(filtres["destination"]) > -1:
-                                arrayMatchedBillets += [x]
-                            elif filtres.__contains__("depart") and x.depart().find(filtres["depart"]) > -1:
-                                arrayMatchedBillets += [x]
-                            elif filtres.__contains__("datemax") and filtres.__contains__("datemin") and  x.date() >= filtres["datemin"] and x.date() <= filtres["datemax"]:
-                                arrayMatchedBillets += [x]
-                            elif (not filtres.__contains__("datemax")) and filtres.__contains__("datemin") and  x.date() >= filtres["datemin"]:
-                                arrayMatchedBillets += [x]
-                            elif (not filtres.__contains__("datemin")) and filtres.__contains__("datemax") and  x.date() <= filtres["datemax"]:
-                                arrayMatchedBillets += [x]
-                    listeBillet = self.setStrBillets(arrayMatchedBillets)
-                    # on répond au demandeur donc nouveau_message.destinataire = ancien_message.demandeur
-                    while self.send(msg.MessageAvecBillets("",self, self.nseq, lmp = self.lport.getValue(), typeDemande=received_message.typeDemande(), clientDestinataire = received_message.clientDemandeur(), listeBillet=listeBillet)):
-                        time.sleep(100)
-                elif received_message.instance() == "MessageAvecBillets":
+                if received_message.instance() == "MessageAvecBillets":
                     self.gerer_billets(msg.MessageAvecBillets(pld,self))
                 # les messages qu'un client n'est pas censés recevoir émettent une erreur
                 else:
@@ -103,38 +80,6 @@ class CLTApp(apg.Application):
             self.print_info()
         else:
             self.vrb_dispwarning("Application {} not started".format(self.APP()))
-    #
-    # Convertisseur d'un array de Billets en string
-    # à passer dans guichet
-    #
-    def setStrBillets(self,array_billets):
-        str = ";"
-        for billet in array_billets:
-            str+="{}{}".format(billet.str(),";")
-        return str
-    #
-    # Convertisseur d'un string en array de Billets
-    # à passer dans guichet
-    #
-    def getArrayBillets(self,str_array_billets):
-        array_billets = str_array_billets.split(";")
-        if str_array_billets[0] == ";":
-            del(array_billets[0])
-        if str_array_billets[-1] == ";":
-            del(array_billets[len(array_billets)-1])
-        return array_billets
-    def parse_info_billet(self,txt):
-        msg = txt.split("+")
-        arr = SortedDict()
-        if txt[0] == "+":
-            del(msg[0])
-        if txt[-1] == "+":
-            del(msg[len(msg)-1])
-        for elt in msg:
-            l=str(elt).split("|", 1)
-            if len(elt)>0:
-                arr[l[0]] = l[1]
-        return arr
     #
     # Transfert de messages
     #
@@ -168,7 +113,7 @@ class CLTApp(apg.Application):
             self.config_gui_ajout_validation()
         else:
             self.info = "Vous consultez :\\n"
-        array_bil = self.getArrayBillets(message.listeBillet())
+        array_bil = outil.getArrayBillets(message.listeBillet())
         for str_bil in array_bil:
             billet = bil.Billet(str_bil,self)
             if message.typeDemande() == "reservation":
@@ -182,6 +127,8 @@ class CLTApp(apg.Application):
         self.config_gui_masquer_validation()
         if oui_ou_non:
             self.info = "Vous avez accepté la réservation\\n"
+            for x in self.liste_billets_attente:
+                x.setDetenteur(self.name) 
             self.liste_billets += self.liste_billets_attente
         else:
             self.info = "Vous avez rejeté la réservation\\n"
@@ -331,10 +278,10 @@ self.bouton_zone.pack_forget()
         self.gui.tk_instr("""
 self.validation_zone = tk.Frame(self.clt_app_zone)
 
-self.accepter_btn = tk.Button(self.validation_zone, text="Valider", command=partial(self.app().accepte_reservation,1), activebackground="red", activeforeground="red", width=20)
+self.accepter_btn = tk.Button(self.validation_zone, text="Valider", command=partial(self.app().accepte_reservation,True), activebackground="red", activeforeground="red", width=20)
 self.accepter_btn.pack(side="left")
 
-self.annuler_btn = tk.Button(self.validation_zone, text="Annuler", command=partial(self.app().accepte_reservation,0), activebackground="red", activeforeground="red", width=20)
+self.annuler_btn = tk.Button(self.validation_zone, text="Annuler", command=partial(self.app().accepte_reservation,False), activebackground="red", activeforeground="red", width=20)
 self.annuler_btn.pack(side="left")
 
 self.validation_zone.pack(fill="both", expand="yes", side="top", pady=5)
