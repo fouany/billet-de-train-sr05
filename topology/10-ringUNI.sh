@@ -1,5 +1,6 @@
 # Faire le ménage
 killall clt.py
+killall gch.py
 killall net.py
 killall cat
 killall tee
@@ -31,7 +32,7 @@ mkfifo ./tmp/in10n ./tmp/out10n
 
 # Créer les apps et redirection de stdin et out de chacune
 # Noeud 1
-./gch.py --auto --ident=gch --whatwho --bas-dest=NET < ./tmp/in1c > ./tmp/out1c &
+./gch.py --auto --appname=CLT --ident=gch --whatwho --bas-dest=NET < ./tmp/in1c > ./tmp/out1c &
 ./net.py --auto --ident=gch --whatwho < ./tmp/in1n > ./tmp/out1n &
 
 # Noeud 2
@@ -83,22 +84,22 @@ cat ./tmp/out3c > ./tmp/in3n &
 cat ./tmp/out3n | tee ./tmp/in3c > ./tmp/in4n &
 
 cat ./tmp/out4c > ./tmp/in4n &
-cat ./tmp/out4n | tee ./tmp/in4c > ./tmp/in5b &
+cat ./tmp/out4n | tee ./tmp/in4c > ./tmp/in5n &
 
 cat ./tmp/out5c > ./tmp/in5n &
-cat ./tmp/out5n | tee ./tmp/in5c > ./tmp/in6b &
+cat ./tmp/out5n | tee ./tmp/in5c > ./tmp/in6n &
 
 cat ./tmp/out6c > ./tmp/in6n &
-cat ./tmp/out6n | tee ./tmp/in6c > ./tmp/in7b &
+cat ./tmp/out6n | tee ./tmp/in6c > ./tmp/in7n &
 
 cat ./tmp/out7c > ./tmp/in7n &
-cat ./tmp/out7n | tee ./tmp/in7c > ./tmp/in8b &
+cat ./tmp/out7n | tee ./tmp/in7c > ./tmp/in8n &
 
 cat ./tmp/out8c > ./tmp/in8n &
-cat ./tmp/out8n | tee ./tmp/in8c > ./tmp/in9b &
+cat ./tmp/out8n | tee ./tmp/in8c > ./tmp/in9n &
 
 cat ./tmp/out9c > ./tmp/in9n &
-cat ./tmp/out9n | tee ./tmp/in9c > ./tmp/in10b &
+cat ./tmp/out9n | tee ./tmp/in9c > ./tmp/in10n &
 
 cat ./tmp/out10c > ./tmp/in10n &
 cat ./tmp/out10n | tee ./tmp/in10c > ./tmp/in1n &
