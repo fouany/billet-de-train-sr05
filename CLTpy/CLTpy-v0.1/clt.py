@@ -23,7 +23,14 @@ class CLTApp(apg.Application):
         self.name=self.params["ident"]
         self.destination_zone=self.com.hst_air()
         self.nseq = 0
+
+        ## Création du module pour les estampilles
         self.lport = lport.lport()
+
+        ## Instantané
+        self.couleur = blanc
+        self.initiateur = False
+
         self.info = "Bonjour !\\n"
         self.msg_trans = []
         self.arrayBillet = [bil.Billet("",self,"2021/06/30","Paris Gare du Nord (FR)","Berlin (D)"),bil.Billet("",self,"2021/07/01","Paris Gare du Nord (FR)","Londres (UK)")]
@@ -128,7 +135,7 @@ class CLTApp(apg.Application):
         if oui_ou_non:
             self.info = "Vous avez accepté la réservation\\n"
             for x in self.liste_billets_attente:
-                x.setDetenteur(self.name) 
+                x.setDetenteur(self.name)
             self.liste_billets += self.liste_billets_attente
         else:
             self.info = "Vous avez rejeté la réservation\\n"
