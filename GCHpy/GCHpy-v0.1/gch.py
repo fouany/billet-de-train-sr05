@@ -21,11 +21,21 @@ class GCHApp(apg.Application):
         self.period = float(self.params["bas-delay"])
         self.info = "Bonjour !\\n"
         self.nseq = 0
+
+
+        ## Création du module pour les estampilles
         self.lport = lport.lport()
+
+        ## Instantané
+        self.couleur = blanc
+        self.initiateur = False
+
+
         self.sending_in_progress = None
         self.name=self.params["ident"]
+
+        ## Création d'une liste de billets
         self.billets=[]
-        #Billet par defaux:
         b=billet.Billet("",self, date="2021/05/12", depart="Compiegne (FR)", destination="Paris Gare du Nord (FR)", detenteur=self.name)
         self.billets.append(b)
         b=billet.Billet("",self, date="2021/06/10", depart="Paris Gare du Nord (FR)", destination="Compiegne (FR)", detenteur=self.name)
@@ -39,6 +49,8 @@ class GCHApp(apg.Application):
         b=billet.Billet("",self, date="2021/05/25", depart="Compiegne (FR)", destination="Paris Gare du Nord (FR)", detenteur=self.name)
         self.billets.append(b)
         self.BilletsDisponibles=[]
+
+
         self.MessageAttente={}
         for bi in self.billets :
             self.BilletsDisponibles.append(bi)
@@ -154,6 +166,8 @@ class GCHApp(apg.Application):
     def Lancee_Snapshot(self):
         self.lport.incr()
         self.info = "Snapshot en cours\\n"
+        self.snd(, who=self.destination_app, where=self.destination_zone)
+        """
         self.print_info()
         self.config_gui_masquer_boutons()
         #en attente d'implementation
@@ -161,7 +175,8 @@ class GCHApp(apg.Application):
             self.info = "...\\n"
             self.print_info()
             time.sleep(10)
-        self.config_gui_ajout_boutons
+        self.config_gui_ajout_boutons()
+        """
 
     #
     # Imprimer self.info sur l'interface graphique
