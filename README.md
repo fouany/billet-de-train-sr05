@@ -1,4 +1,4 @@
-# Projet SR05 - Billet de train
+# Projet SR05 - Réservation de billets de train
 ## Structure du projet
 Le projet est basé sur la structure de Airplug et ajoute :
 * Un dossier CLTPY qui contient le code pour les clients qui souhaitent réserver des billets de train.<br>
