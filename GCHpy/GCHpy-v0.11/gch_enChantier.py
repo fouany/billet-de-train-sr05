@@ -21,36 +21,24 @@ class GCHApp(apg.Application):
         self.period = float(self.params["bas-delay"])
         self.info = "Bonjour !\\n"
         self.nseq = 0
-
-
-        ## Création du module pour les estampilles
         self.lport = lport.lport()
-
-        ## Instantané
-        self.couleur = "blanc"
-        self.initiateur = False
-
-
         self.sending_in_progress = None
-        self.name=self.params["ident"]
-
-        ## Création d'une liste de billets
+        self.name='gch'
         self.billets=[]
-        b=billet.Billet("",self, date="2021/05/12", depart="Compiegne (FR)", destination="Paris Gare du Nord (FR)", detenteur=self.name)
+        #Billet par defaux:
+        b=billet.Billet("",self, date="12/05/2021", depart="Compiegne (FR)", destination="Paris Gare du Nord (FR)", detenteur=self.name)
         self.billets.append(b)
-        b=billet.Billet("",self, date="2021/06/10", depart="Paris Gare du Nord (FR)", destination="Compiegne (FR)", detenteur=self.name)
+        b=billet.Billet("",self, date="10/06/2021", depart="Paris Gare du Nord (FR)", destination="Compiegne (FR)", detenteur=self.name)
         self.billets.append(b)
-        b=billet.Billet("",self, date="2021/05/13", depart="Lyon Part Dieu (FR)", destination="ST Etienne (FR)", detenteur=self.name)
+        b=billet.Billet("",self, date="13/05/2021", depart="Lyon Part Dieu (FR)", destination="ST Etienne (FR)", detenteur=self.name)
         self.billets.append(b)
-        b=billet.Billet("",self, date="2021/05/13", depart="Lyon Part Dieu (FR)", destination="Paris Gare du Nord (FR)", detenteur=self.name)
+        b=billet.Billet("",self, date="13/05/2021", depart="Lyon Part Dieu (FR)", destination="Paris Gare du Nord (FR)", detenteur=self.name)
         self.billets.append(b)
-        b=billet.Billet("",self, date="2021/05/25", depart="Lyon Part Dieu (FR)", destination="Paris Gare du Nord (FR)", detenteur=self.name)
+        b=billet.Billet("",self, date="25/05/2021", depart="Lyon Part Dieu (FR)", destination="Paris Gare du Nord (FR)", detenteur=self.name)
         self.billets.append(b)
-        b=billet.Billet("",self, date="2021/05/25", depart="Compiegne (FR)", destination="Paris Gare du Nord (FR)", detenteur=self.name)
+        b=billet.Billet("",self, date="25/05/2021", depart="Compiegne (FR)", destination="Paris Gare du Nord (FR)", detenteur=self.name)
         self.billets.append(b)
         self.BilletsDisponibles=[]
-
-
         self.MessageAttente={}
         for bi in self.billets :
             self.BilletsDisponibles.append(bi)
@@ -63,61 +51,37 @@ class GCHApp(apg.Application):
         if self.params["bas-autosend"]:
             self.send_button()
 
-    def annulerReservationBillets(self,identifiantMessage):
-        message=self.MessageAttente.pop(str(identifiantMessage))
-        for str_billet in outil.getArrayBillets(message.listeBillet()):
-            self.BilletsDisponibles.append(billet.Billet(str_billet,self))
+    def repondreMessage(M,S):
+        # instance du site guichet G
+        M.clientDemandeur=self
+        M.type='reponse'
+        self.snd(str(M), who=self.destination_app, where=self.destination_zone)
 
-    def mettreDeCoteBillets(self,message,listeBillet):
-        for bil in listeBillet:
-            for x in self.BilletsDisponibles:
-                if x.id() == bil.id():
-                    self.BilletsDisponibles.remove(x)
-        self.MessageAttente[str(message.id())]= message
+    def annulerReservationBillets(identifiantMessage):
+        M=self.MessageAttente.pop(M.identifiantMessageRecu)
+        self.BilletsDisponibles.append(M.billets)
 
-    def filtrer(self,tab_filtres,filtre,operator,deja_filtre,arrayMatchedBillets):
-        if len(tab_filtres) != 0 and tab_filtres.__contains__(filtre):
-            if deja_filtre:
-                arrayMatchedBilletsStep1 = list(arrayMatchedBillets)
-            else:
-                arrayMatchedBilletsStep1 = list(self.BilletsDisponibles)
-            arrayMatchedBillets = []
-            deja_filtre = True
-            for x in arrayMatchedBilletsStep1:
-                if operator == "==" and x.get(filtre).find(tab_filtres[filtre]) > -1:
-                    arrayMatchedBillets += [x]
-                elif operator == ">=" and x.get(filtre) >= tab_filtres[filtre]:
-                    arrayMatchedBillets += [x]
-                elif operator == "<=" and x.get(filtre) <= tab_filtres[filtre]:
-                    arrayMatchedBillets += [x]
-            tab_filtres.pop(filtre)
-        return deja_filtre,arrayMatchedBillets
+    def mettreDeCoteBillets(M):
+        # instance site guichet G
+        for bil in M.listeBillet:
+            self.BilletsDisponibles.remove(bil)
+        self.MessageAttente[M.clientDemandeur()+" "+M.id()]= M
 
-    def repondreListeBillets(self,messageDemande):
-        arrayMatchedBillets = []
-        deja_filtre = False
-        filtres = outil.parse_info_billet(messageDemande.infoBillet())
-        if len(filtres) == 0:
-            arrayMatchedBillets = list(self.BilletsDisponibles)
+    def repondreListeBillets(MessageDemande):
+        R=MessageAvecBillets()
+        R.billets=outil.setStrBillets(self.billets())
+        R.typeDemande=MessageDemande.typeDemande
+        if R.typeDemande == 'reservation':
+            self.mettreDeCoteBillets(R)
+        R.clientDestinataire=M.clientDemandeur
+        self.repondreMessage(R,R.clientDestinataire)
+
+    def validerListeBillets(M):
+        if M.reponse == 0:
+            # self.annulerReservationBillets()
+            print("tmp")
         else:
-            deja_filtre,arrayMatchedBillets = self.filtrer(filtres,"destination","==",deja_filtre,arrayMatchedBillets)
-            deja_filtre,arrayMatchedBillets = self.filtrer(filtres,"depart","==",deja_filtre,arrayMatchedBillets)
-            deja_filtre,arrayMatchedBillets = self.filtrer(filtres,"datemin",">=",deja_filtre,arrayMatchedBillets)
-            deja_filtre,arrayMatchedBillets = self.filtrer(filtres,"datemax","<=",deja_filtre,arrayMatchedBillets)
-        listeBillet = outil.setStrBillets(arrayMatchedBillets)
-        typeDemande=messageDemande.typeDemande()
-        clientDestinataire=messageDemande.clientDemandeur()
-        reponse=msg.MessageAvecBillets("", self, self.nseq, self.lport.getValue(), clientDestinataire, typeDemande, listeBillet)
-        self.nseq += 1
-        if typeDemande == 'reservation':
-            self.mettreDeCoteBillets(reponse,arrayMatchedBillets)
-        self.snd(str(reponse), who=self.destination_app, where=self.destination_zone)
-
-    def validerListeBillets(self,message):
-        if message.reponse() == "False":
-            self.annulerReservationBillets(message.identifiantMessageRecu())
-        else:
-            self.MessageAttente.pop(str(message.identifiantMessageRecu()))
+            self.MessageAttente.pop(M.identifiantMessageRecu)
 
 
     def receive(self, pld, src, dst, where):
@@ -125,20 +89,19 @@ class GCHApp(apg.Application):
             self.vrb("{}.rcv(pld={}, src={}, dst={}, where={})".format(self.APP(),pld, src, dst, where), 6)
             super().receive(pld, src=src, dst=dst, where=where)
 
+            #instance site guichet G, thread associé au site S
 
             received_message=msg.Message(pld,self)
-            if int(received_message.lmp()) > self.lport.getValue():
-                self.lport.setValue(int(received_message.lmp()))
-            self.lport.incr()
-
             if received_message.clientDestinataire() != self.name:
-                return
+                app.wrb_disperror("Guichet can't pass on a message")
 
             if received_message.instance() == "MessageDemande":
-                self.repondreListeBillets(msg.MessageDemande(pld,self))
+                self.info=received_message.typeDemande()
+                self.repondreListeBillets(received_message)
 
             elif received_message.instance() == "MessageAccuseReception":
-                self.validerListeBillets(msg.MessageAccuseReception(pld,self))
+                print("tmp")
+                # validerListeBillets(received_message)
 
             elif received_message.instance() == "MessageSnapshot":
                 # self.info="id_message_recu = "+received_message.identifiantMessageRecu()
@@ -147,7 +110,16 @@ class GCHApp(apg.Application):
             else:
                 received_message=msg.Msessage(pld,self)
                 self.info="Message lambda"
-            self.print_info()
+            if int(received_message.lmp()) > self.lport.getValue():
+                self.lport.setValue(int(received_message.lmp()))
+            self.lport.incr()
+            self.gui.tk_instr("""
+self.received_source.config(text="{}")
+self.received_payload.config(text="{}")
+self.received_nseq.config(text="{}")
+self.received_lport.config(text = 'H : {}')
+""".format(src, received_message.payload(), received_message.nseq(),self.lport.getValue()))
+
         else:
             self.vrb_dispwarning("Application {} not started".format(self.APP()))
 
@@ -166,17 +138,14 @@ class GCHApp(apg.Application):
     def Lancee_Snapshot(self):
         self.lport.incr()
         self.info = "Snapshot en cours\\n"
-
-
         self.print_info()
         self.config_gui_masquer_boutons()
         #en attente d'implementation
         for i in range(3):
             self.info = "...\\n"
             self.print_info()
-            
-        self.config_gui_ajout_boutons()
-
+            time.sleep(10)
+        self.config_gui_ajout_boutons
 
     #
     # Imprimer self.info sur l'interface graphique
@@ -188,6 +157,7 @@ self.received_info.config(state='normal')
 self.received_info.insert(tk.INSERT,'{}')
 self.received_info.config(state='disabled')
 """.format(self.lport.getValue(),self.info))
+
         self.info = ""
     #
     # Ajout des boutons d'actions
