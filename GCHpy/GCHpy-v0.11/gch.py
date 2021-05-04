@@ -44,23 +44,27 @@ class GCHApp(apg.Application):
         self.BilletsDisponibles.append(b)
         b=billet.Billet("",self, date="2021/05/25", depart="Compiegne (FR)", destination="Paris Gare du Nord (FR)", detenteur=self.name)
         self.BilletsDisponibles.append(b)
-        self.MessageAttente=[]
+        self.MessageAttente={}
 
         if self.check_mandatory_parameters():
             self.config_gui()
             self.end_initialisation()
+    #
+    # Formalise le guichet en xml
+    #
     def str(self):
-        rep=""
+        rep="<guichet>\n"
         #name
-        rep+="^name~"+str(self.name)
+        rep+="   <name>"+self.name+"</name>\n"
         #nseq
-        rep+="^nseq~"+str(self.nseq)
+        rep+="   <nseq>"+str(self.nseq)+"</nseq>\n"
         #lport
-        rep+="^lport~"+str(self.lport.getValue())
+        rep+="   <lport>"+str(self.lport.getValue())+"</lport>\n"
         #BilletsDisponibles
-        rep+="^BilletsDisponibles~"+outil.setStrBillets(self.BilletsDisponibles)
+        rep+=outil.FormaliserBillet(self.BilletsDisponibles,"   ")
         #MessageAttente
-        rep+="^MessageAttente~|"+outil.setStrMessage(self.MessageAttente)+"|"
+        rep+=outil.FormaliserMessage(self.MessageAttente,"   ")
+        rep+="</guichet>"+"\n"
         return rep
     def start(self):
         super().start()

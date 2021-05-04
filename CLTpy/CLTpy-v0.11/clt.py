@@ -40,6 +40,25 @@ class CLTApp(apg.Application):
             self.config_gui()
             self.end_initialisation()
     #
+    # formalise le client en xml
+    #
+    def str(self):
+        rep="<Client>\n"
+        #name
+        rep+="   <name>"+self.name+"</name>\n"
+        #nseq
+        rep+="   <nseq>"+self.nseq+"</nseq>\n"
+        #lport
+        rep+="   <lport>"+self.lport+"</lport>\n"
+        #ms_trans
+        rep+=outil.FormaliserMessage(self.ms_trans,"   ")
+        #liste_billets
+        rep+=outil.FormaliserBillet(self.liste_billets,"   ")
+        #liste_billets_attente
+        rep+=outil.FormaliserBillet(self.liste_billets_attente,"   ")
+        rep+="</Client>"+"\n"
+        return rep
+    #
     # Start
     #
     def start(self):
