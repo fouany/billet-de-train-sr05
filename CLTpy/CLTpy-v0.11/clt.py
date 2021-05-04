@@ -139,7 +139,7 @@ class CLTApp(apg.Application):
             self.liste_billets += self.liste_billets_attente
         else:
             self.info = "Vous avez rejeté la réservation\\n"
-        while self.send(msg.MessageAccuseReception("",self, self.nseq, lmp = self.lport.getValue(), clientDemandeur = self.name, identifiantMessageRecu = self.msg_reservation_id, reponse=oui_ou_non)):
+        while self.send(msg.MessageAccuseReception("",self,  self.couleur,self.nseq, lmp = self.lport.getValue(), clientDemandeur = self.name, identifiantMessageRecu = self.msg_reservation_id, reponse=oui_ou_non)):
             time.sleep(100)
         self.liste_billets_attente = []
         self.config_gui_ajout_boutons()
@@ -178,7 +178,7 @@ class CLTApp(apg.Application):
             datemax = datemax.get()
             if len(datemax) > 0:
                 infoBillet += "datemax|{}+".format(datemax)
-            self.send(msg.MessageDemande("",self, self.nseq, lmp = self.lport.getValue(), clientDemandeur = self.name, infoBillet = infoBillet))
+            self.send(msg.MessageDemande("",self, self.couleur, self.nseq, lmp = self.lport.getValue(), clientDemandeur = self.name, infoBillet = infoBillet))
     #
     # Action du bouton de réservation
     #

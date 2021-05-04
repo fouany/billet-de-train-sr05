@@ -28,8 +28,10 @@ class GCHApp(apg.Application):
 
         ## Instantané
         self.couleur = "blanc"
-        self.initiateur = False
-
+        self.bilan = 0
+        self.EG=None
+        NbÉtatsAttendusi = 0
+        NbMsgAttendusi = 0
 
         self.sending_in_progress = None
         self.name=self.params["ident"]
@@ -57,7 +59,19 @@ class GCHApp(apg.Application):
         if self.check_mandatory_parameters():
             self.config_gui()
             self.end_initialisation()
-
+    def str(self):
+        rep=""
+        #name
+        rep+="^name~"+str(self.name)
+        #nseq
+        rep+="^nseq~"+str(self.nseq)
+        #lport
+        rep+="^lport~"+str(self.lport)
+        #BilletsDisponibles
+        rep+="^BilletsDisponibles~"+outil.setStrBillets(self.BilletsDisponibles)
+        #MessageAttente
+        rep+="^MessageAttente~|"+outil.setStrMessage(self.MessageAttente)+"|"
+        return rep
     def start(self):
         super().start()
         if self.params["bas-autosend"]:
@@ -107,7 +121,7 @@ class GCHApp(apg.Application):
         listeBillet = outil.setStrBillets(arrayMatchedBillets)
         typeDemande=messageDemande.typeDemande()
         clientDestinataire=messageDemande.clientDemandeur()
-        reponse=msg.MessageAvecBillets("", self, self.nseq, self.lport.getValue(), clientDestinataire, typeDemande, listeBillet)
+        reponse=msg.MessageAvecBillets("", self, self.couleur,self.nseq, self.lport.getValue(), clientDestinataire, typeDemande, listeBillet)
         self.nseq += 1
         if typeDemande == 'reservation':
             self.mettreDeCoteBillets(reponse,arrayMatchedBillets)
@@ -165,17 +179,15 @@ class GCHApp(apg.Application):
     #
     def Lancee_Snapshot(self):
         self.lport.incr()
-        self.info = "Snapshot en cours\\n"
-
-
-        self.print_info()
-        self.config_gui_masquer_boutons()
-        #en attente d'implementation
-        for i in range(3):
-            self.info = "...\\n"
-            self.print_info()
-            
-        self.config_gui_ajout_boutons()
+        self.couleur = "rouge"
+        self.EG = self.str()
+        N=5 #En atttendant d'implemeter dans les paramettre
+        self.NbÉtatsAttendusi = N-1
+        self.NbMsgAttendusi = self.bilan
+        """pour test"""
+        with open("test.txt","w") as f:
+            f.write(self.EG)
+        #Propager la snapshot
 
 
     #

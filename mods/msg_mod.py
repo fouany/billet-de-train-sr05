@@ -8,12 +8,13 @@ id_message_seq = 0
 
 class Message(apg.msg.Message):
     """Application-specific abstract message"""
-    def __init__(self, text, app, nseq=None, lmp=None, clientDemandeur=None, clientDestinataire=None, instance='default'):
+    def __init__(self, text, app, nseq=None, lmp=None, clientDemandeur=None, clientDestinataire=None, instance='default',couleur="blanc"):
         super().__init__(text, app)
-        self.fields += ["instance","nseq","lmp","id","clientDemandeur","clientDestinataire"]
+        self.fields += ["instance","nseq","lmp","id","clientDemandeur","clientDestinataire","couleur"]
         global id_message_seq
         id_message_seq += 1
         self.content["id"] = id_message_seq
+        self.content["couleur"] = couleur
         if instance != None:
             self.content["instance"] = instance
         if nseq != None :
@@ -40,11 +41,13 @@ class Message(apg.msg.Message):
         return self.content["clientDemandeur"]
     def clientDestinataire(self):
         return self.content["clientDestinataire"]
+    def couleur(self):
+        return self.content["couleur"]
 
 class MessageDemande(Message):
     """Application-specific message MessageDemande"""
-    def __init__(self, text, app, nseq=None, lmp=None, clientDemandeur=None, typeDemande='consultation', infoBillet=""):
-        super().__init__(text,app,nseq,lmp,clientDemandeur,clientDestinataire="gch",instance="MessageDemande")
+    def __init__(self, text, app,couleurs="blanc", nseq=None, lmp=None, clientDemandeur=None, typeDemande='consultation', infoBillet=""):
+        super().__init__(text,app,nseq,lmp,clientDemandeur,clientDestinataire="gch",instance="MessageDemande",couleur=couleurs)
         self.fields += ["typeDemande","infoBillet"]
         self.content["typeDemande"] = typeDemande
         if infoBillet != None:
@@ -58,8 +61,8 @@ class MessageDemande(Message):
 
 class MessageAccuseReception(Message):
     """Application-specific message MessageAccuseReception"""
-    def __init__(self, text, app, nseq=None, lmp=None, clientDemandeur=None, identifiantMessageRecu=None, reponse=1):
-        super().__init__(text,app,nseq,lmp,clientDemandeur,clientDestinataire="gch",instance="MessageAccuseReception")
+    def __init__(self, text, app,couleurs="blanc", nseq=None, lmp=None, clientDemandeur=None, identifiantMessageRecu=None, reponse=1):
+        super().__init__(text,app,nseq,lmp,clientDemandeur,clientDestinataire="gch",instance="MessageAccuseReception",couleur=couleurs)
         self.fields += ["identifiantMessageRecu","reponse"]
         self.content["reponse"] = reponse
         if identifiantMessageRecu != None:
@@ -73,8 +76,8 @@ class MessageAccuseReception(Message):
 
 class MessageAvecBillets(Message):
     """Application-specific message MessageAvecBillets"""
-    def __init__(self, text, app, nseq=None, lmp=None, clientDestinataire=None, typeDemande='consultation', listeBillet=""):
-        super().__init__(text,app,nseq,lmp,"gch",clientDestinataire,instance="MessageAvecBillets")
+    def __init__(self, text, app,couleurs="blanc", nseq=None, lmp=None, clientDestinataire=None, typeDemande='consultation', listeBillet=""):
+        super().__init__(text,app,nseq,lmp,"gch",clientDestinataire,instance="MessageAvecBillets",couleur=couleurs)
         self.fields += ["typeDemande","listeBillet"]
         self.content["typeDemande"] = typeDemande
         self.content["listeBillet"] = listeBillet
@@ -82,5 +85,21 @@ class MessageAvecBillets(Message):
             self.parse_text(text)
     def typeDemande(self):
         return self.content["typeDemande"]
+    def listeBillet(self):
+        return self.content["listeBillet"]
+
+class messageSnapshot(Message):
+    """Application-specific message MessageSnapshot"""
+    def __init__(self, text, app, clientDemandeur,couleurs="blanc", nseq=None, lmp=None,listeBillet=[],typeMessage="FaireSnapshot"):
+        super().__init__(text,app,nseq,lmp,clientDemandeur,instance="MessageSnapshot",couleur=couleurs)
+        self.fields += ["listeBillet","typeMessage"]
+
+        self.content["listeBillet"] = listeBillet
+        self.content["typeMessage"] = typeMessage
+
+        if len(text) > 0:
+            self.parse_text(text)
+    def typeMessage(self):
+        return self.content["typeMessage"]
     def listeBillet(self):
         return self.content["listeBillet"]

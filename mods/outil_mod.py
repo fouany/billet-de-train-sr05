@@ -45,3 +45,9 @@ def parse_info_billet(txt):
         if len(elt)>0:
             arr[l[0]] = l[1]
     return arr
+
+def setStrMessage(array_Message):
+    rep = ";"
+    for key,Message in array_Message.items():
+        rep+="{}{}".format(str(Message),";")
+    return rep
