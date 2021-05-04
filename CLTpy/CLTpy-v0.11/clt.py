@@ -33,7 +33,6 @@ class CLTApp(apg.Application):
 
         self.info = "Bonjour !\\n"
         self.msg_trans = []
-        self.arrayBillet = [bil.Billet("",self,"2021/06/30","Paris Gare du Nord (FR)","Berlin (D)"),bil.Billet("",self,"2021/07/01","Paris Gare du Nord (FR)","Londres (UK)")]
         self.liste_billets = []
         self.liste_billets_attente = []
         self.sending_in_progress = None
@@ -139,7 +138,7 @@ class CLTApp(apg.Application):
             self.liste_billets += self.liste_billets_attente
         else:
             self.info = "Vous avez rejeté la réservation\\n"
-        while self.send(msg.MessageAccuseReception("",self,  self.couleur,self.nseq, lmp = self.lport.getValue(), clientDemandeur = self.name, identifiantMessageRecu = self.msg_reservation_id, reponse=oui_ou_non)):
+        while self.send(msg.MessageAccuseReception("",self, self.couleur, self.nseq, lmp = self.lport.getValue(), clientDemandeur = self.name, identifiantMessageRecu = self.msg_reservation_id, reponse=oui_ou_non)):
             time.sleep(100)
         self.liste_billets_attente = []
         self.config_gui_ajout_boutons()
@@ -196,7 +195,7 @@ class CLTApp(apg.Application):
             datemax = datemax.get()
             if len(datemax) > 0:
                 infoBillet += "datemax|{}+".format(datemax)
-            self.send(msg.MessageDemande("",self, self.nseq, lmp = self.lport.getValue(), clientDemandeur = self.name, infoBillet = infoBillet, typeDemande = "reservation"))
+            self.send(msg.MessageDemande("",self, self.couleur, self.nseq, lmp = self.lport.getValue(), clientDemandeur = self.name, infoBillet = infoBillet, typeDemande = "reservation"))
     #
     # Afficher les billets possédés
     #

@@ -7,6 +7,7 @@ import libapg as apg
 import msg_mod as msg
 import outil_mod as outil
 import billet_mod as billet
+import snap_mod as snap
 import time
 
 
@@ -15,47 +16,36 @@ class GCHApp(apg.Application):
         default_options_values={"default-pld":"Hello World","appname":"GCH","whatwho":True, "bas-dest":"GCH","bas-delay":"1","bas-autosend":False}
         super().__init__(default_options_values)
         self.mandatory_parameters += [] # No mandatory parameter for this app
-        self.msg = self.params["default-pld"]
         self.destination_app=self.params["bas-dest"]
+        self.name=self.params["ident"]
         self.destination_zone=self.com.hst_air()
         self.period = float(self.params["bas-delay"])
         self.info = "Bonjour !\\n"
         self.nseq = 0
-
+        self.sending_in_progress = None
 
         ## Création du module pour les estampilles
         self.lport = lport.lport()
 
-        ## Instantané
-        self.couleur = "blanc"
-        self.bilan = 0
-        self.EG=None
-        NbÉtatsAttendusi = 0
-        NbMsgAttendusi = 0
-
-        self.sending_in_progress = None
-        self.name=self.params["ident"]
+        ## Création d'un service de snapshot
+        self.snapchot = snap.SnapshotService(6)
 
         ## Création d'une liste de billets
-        self.billets=[]
-        b=billet.Billet("",self, date="2021/05/12", depart="Compiegne (FR)", destination="Paris Gare du Nord (FR)", detenteur=self.name)
-        self.billets.append(b)
-        b=billet.Billet("",self, date="2021/06/10", depart="Paris Gare du Nord (FR)", destination="Compiegne (FR)", detenteur=self.name)
-        self.billets.append(b)
-        b=billet.Billet("",self, date="2021/05/13", depart="Lyon Part Dieu (FR)", destination="ST Etienne (FR)", detenteur=self.name)
-        self.billets.append(b)
-        b=billet.Billet("",self, date="2021/05/13", depart="Lyon Part Dieu (FR)", destination="Paris Gare du Nord (FR)", detenteur=self.name)
-        self.billets.append(b)
-        b=billet.Billet("",self, date="2021/05/25", depart="Lyon Part Dieu (FR)", destination="Paris Gare du Nord (FR)", detenteur=self.name)
-        self.billets.append(b)
-        b=billet.Billet("",self, date="2021/05/25", depart="Compiegne (FR)", destination="Paris Gare du Nord (FR)", detenteur=self.name)
-        self.billets.append(b)
         self.BilletsDisponibles=[]
+        b=billet.Billet("",self, date="2021/05/12", depart="Compiegne (FR)", destination="Paris Gare du Nord (FR)", detenteur=self.name)
+        self.BilletsDisponibles.append(b)
+        b=billet.Billet("",self, date="2021/06/10", depart="Paris Gare du Nord (FR)", destination="Compiegne (FR)", detenteur=self.name)
+        self.BilletsDisponibles.append(b)
+        b=billet.Billet("",self, date="2021/05/13", depart="Lyon Part Dieu (FR)", destination="ST Etienne (FR)", detenteur=self.name)
+        self.BilletsDisponibles.append(b)
+        b=billet.Billet("",self, date="2021/05/13", depart="Lyon Part Dieu (FR)", destination="Paris Gare du Nord (FR)", detenteur=self.name)
+        self.BilletsDisponibles.append(b)
+        b=billet.Billet("",self, date="2021/05/25", depart="Lyon Part Dieu (FR)", destination="Paris Gare du Nord (FR)", detenteur=self.name)
+        self.BilletsDisponibles.append(b)
+        b=billet.Billet("",self, date="2021/05/25", depart="Compiegne (FR)", destination="Paris Gare du Nord (FR)", detenteur=self.name)
+        self.BilletsDisponibles.append(b)
+        self.MessageAttente=[]
 
-
-        self.MessageAttente={}
-        for bi in self.billets :
-            self.BilletsDisponibles.append(bi)
         if self.check_mandatory_parameters():
             self.config_gui()
             self.end_initialisation()
@@ -66,7 +56,7 @@ class GCHApp(apg.Application):
         #nseq
         rep+="^nseq~"+str(self.nseq)
         #lport
-        rep+="^lport~"+str(self.lport)
+        rep+="^lport~"+str(self.lport.getValue())
         #BilletsDisponibles
         rep+="^BilletsDisponibles~"+outil.setStrBillets(self.BilletsDisponibles)
         #MessageAttente
@@ -121,7 +111,7 @@ class GCHApp(apg.Application):
         listeBillet = outil.setStrBillets(arrayMatchedBillets)
         typeDemande=messageDemande.typeDemande()
         clientDestinataire=messageDemande.clientDemandeur()
-        reponse=msg.MessageAvecBillets("", self, self.couleur,self.nseq, self.lport.getValue(), clientDestinataire, typeDemande, listeBillet)
+        reponse=msg.MessageAvecBillets("", self, self.snapshot.couleur(),self.nseq, self.lport.getValue(), clientDestinataire, typeDemande, listeBillet)
         self.nseq += 1
         if typeDemande == 'reservation':
             self.mettreDeCoteBillets(reponse,arrayMatchedBillets)
@@ -179,17 +169,8 @@ class GCHApp(apg.Application):
     #
     def Lancee_Snapshot(self):
         self.lport.incr()
-        self.couleur = "rouge"
-        self.EG = self.str()
-        N=5 #En atttendant d'implemeter dans les paramettre
-        self.NbÉtatsAttendusi = N-1
-        self.NbMsgAttendusi = self.bilan
-        """pour test"""
-        with open("test.txt","w") as f:
-            f.write(self.EG)
+        self.snapchot.lancer(self.str())
         #Propager la snapshot
-
-
     #
     # Imprimer self.info sur l'interface graphique
     #
