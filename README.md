@@ -1,4 +1,4 @@
-# Projet SR05 - Billet de train
+# Projet SR05 - Réservation de billets de train
 ## Structure du projet
 Le projet est basé sur la structure de Airplug et ajoute :
 * Un dossier CLTPY qui contient le code pour les clients qui souhaitent réserver des billets de train.<br>
@@ -27,5 +27,6 @@ chmod +x 10-ringUNI.sh
 chmod +x topoquelconque.sh
 ./topoquelconque.sh
 ```
-Une fois l'application lancée, il suffit de prendre l'interface d'un des clients et de tester les commandes. On peut consulter les billets disponibles répondant à certains critères, on peut également réserver ces derniers. Une fois réserver, on peut consulter les billets que l'on possède.<br><br>
+Une fois l'application lancée, il suffit de prendre l'interface d'un des clients et de tester les commandes. 
+<br> On peut consulter les billets disponibles répondant à certains critères, on peut également réserver ces derniers. Une fois réservés, on peut consulter les billets que l'on possède.<br><br>
 Via l'interface du guichet, on peut consulter les billets que ces derniers possèdent. On peut également lancer une snapshot.
