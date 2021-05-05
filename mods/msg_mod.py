@@ -43,10 +43,10 @@ class Message(apg.msg.Message):
         return self.content["clientDestinataire"]
     def couleur(self):
         return self.content["couleur"]
-
+    
 class MessageDemande(Message):
     """Application-specific message MessageDemande"""
-    def __init__(self, text, app,couleurs="blanc", nseq=None, lmp=None, clientDemandeur=None, typeDemande='consultation', infoBillet=""):
+    def __init__(self, text, app, couleurs="blanc", nseq=None, lmp=None, clientDemandeur=None, typeDemande='consultation', infoBillet=""):
         super().__init__(text,app,nseq,lmp,clientDemandeur,clientDestinataire="gch",instance="MessageDemande",couleur=couleurs)
         self.fields += ["typeDemande","infoBillet"]
         self.content["typeDemande"] = typeDemande
@@ -88,18 +88,32 @@ class MessageAvecBillets(Message):
     def listeBillet(self):
         return self.content["listeBillet"]
 
-class messageSnapshot(Message):
+class MessageSnapshot(Message):
     """Application-specific message MessageSnapshot"""
-    def __init__(self, text, app, clientDemandeur,couleurs="blanc", nseq=None, lmp=None,listeBillet=[],typeMessage="FaireSnapshot"):
-        super().__init__(text,app,nseq,lmp,clientDemandeur,instance="MessageSnapshot",couleur=couleurs)
-        self.fields += ["listeBillet","typeMessage"]
-
-        self.content["listeBillet"] = listeBillet
+    def __init__(self, text, app, clientDemandeur=None,clientDestinataire=None,couleurs="blanc", nseq=None, lmp=None,etat_global=[],bilan=0,typeMessage="FaireSnapshot"):
+        super().__init__(text,app,nseq,lmp,clientDemandeur,clientDestinataire,instance="MessageSnapshot",couleur=couleurs)
+        self.fields += ["etat_global","typeMessage","bilan"]
+        self.content["etat_global"] = etat_global
+        self.content["bilan"] = bilan
         self.content["typeMessage"] = typeMessage
-
         if len(text) > 0:
             self.parse_text(text)
     def typeMessage(self):
         return self.content["typeMessage"]
-    def listeBillet(self):
-        return self.content["listeBillet"]
+    def bilan(self):
+        return self.content["bilan"]
+    def etat_global(self):
+        return self.content["etat_global"]
+
+class MessageSnapshotPrepost(Message):
+    """Application-specific message ReceptionMessageSnapshotPrepost"""
+    def __init__(self, text, app, clientDemandeur=None,couleurs="blanc", nseq=None, lmp=None,str_msg=""):
+        super().__init__(text,app,nseq,lmp,clientDemandeur,instance="MessageSnapshotPrepost",couleur=couleurs)
+        self.fields += ["str_msg"]
+
+        self.content["str_msg"] = str_msg
+
+        if len(text) > 0:
+            self.parse_text(text)
+    def str_msg(self):
+        return self.content["str_msg"]

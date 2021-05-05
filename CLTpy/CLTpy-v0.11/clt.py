@@ -8,7 +8,7 @@ import libapg as apg
 import msg_mod as msg
 import outil_mod as outil
 import billet_mod as bil
-from sortedcontainers import SortedDict # à passer dans guichet
+import snap_mod as snap
 
 class CLTApp(apg.Application):
     #
@@ -18,46 +18,25 @@ class CLTApp(apg.Application):
         default_options_values={"default-pld":"Hello World","whatwho":True, "bas-dest":"CLT","bas-delay":"1","bas-autosend":False}
         super().__init__(default_options_values)
         self.mandatory_parameters += [] # No mandatory parameter for this app
-        self.msg = self.params["default-pld"]
         self.destination_app=self.params["bas-dest"]
         self.name=self.params["ident"]
         self.destination_zone=self.com.hst_air()
         self.nseq = 0
-
-        ## Création du module pour les estampilles
-        self.lport = lport.lport()
-
-        ## Instantané
-        self.couleur = "blanc"
-        self.initiateur = False
-
         self.info = "Bonjour !\\n"
         self.msg_trans = []
         self.liste_billets = []
         self.liste_billets_attente = []
         self.sending_in_progress = None
+
+        ## Création d'un service de snapshot
+        self.snapshot = snap.SnapshotService()
+
+        ## Création du module pour les estampilles
+        self.lport = lport.lport()
+
         if self.check_mandatory_parameters():
             self.config_gui()
             self.end_initialisation()
-    #
-    # formalise le client en xml
-    #
-    def str(self):
-        rep="<Client>\n"
-        #name
-        rep+="   <name>"+self.name+"</name>\n"
-        #nseq
-        rep+="   <nseq>"+self.nseq+"</nseq>\n"
-        #lport
-        rep+="   <lport>"+self.lport+"</lport>\n"
-        #ms_trans
-        rep+=outil.FormaliserMessage(self.ms_trans,"   ")
-        #liste_billets
-        rep+=outil.FormaliserBillet(self.liste_billets,"   ")
-        #liste_billets_attente
-        rep+=outil.FormaliserBillet(self.liste_billets_attente,"   ")
-        rep+="</Client>"+"\n"
-        return rep
     #
     # Start
     #
@@ -65,7 +44,6 @@ class CLTApp(apg.Application):
         super().start()
         if self.params["bas-autosend"]:
             self.send_button()
-
     #
     # Reception de messages
     #
@@ -80,7 +58,7 @@ class CLTApp(apg.Application):
                 return
 
             # si on n'a pas deja recu ce message on le gere sinon on abandonne
-            codeMessage = received_message.clientDemandeur()+" "+received_message.id()
+            codeMessage = received_message.clientDemandeur()+" "+str(received_message.id())
             if not codeMessage in self.msg_trans:
                 self.msg_trans.append(codeMessage)
             else:
@@ -92,7 +70,7 @@ class CLTApp(apg.Application):
             self.lport.incr()
 
             # si n'est pas destinataire alors transfert du message
-            if received_message.clientDestinataire() != self.name:
+            if received_message.clientDestinataire() != self.name and received_message.clientDestinataire() != self.snapshot.ALL():
                 while not self.transfert(received_message,pld):
                     time.sleep(100)
             # si on est destinataire on receptionne le message
@@ -100,11 +78,33 @@ class CLTApp(apg.Application):
                 if received_message.instance() == "MessageAvecBillets":
                     self.gerer_billets(msg.MessageAvecBillets(pld,self))
                 # les messages qu'un client n'est pas censés recevoir émettent une erreur
-                else:
+                elif received_message.clientDestinataire() != self.snapshot.ALL():
                     self.info = "Le site "+received_message.clientDemandeur()+" vous a envoyé un message du type"+received_message.instance()+"\\n"
+                    self.print_info()
+                    return
+                propagation = self.snapshot.propager(self,received_message.couleur(),str(received_message))
+                if propagation != None:
+                    self.send(propagation)
+                    self.send(self.snapshot.lancer(self))
             self.print_info()
         else:
             self.vrb_dispwarning("Application {} not started".format(self.APP()))
+    def str(self):
+        rep="<Client>\\n"
+        #name
+        rep+="   <name>"+self.name+"</name>\\n"
+        #nseq
+        rep+="   <nseq>"+str(self.nseq)+"</nseq>\\n"
+        #lport
+        rep+="   <lport>"+str(self.lport.getValue())+"</lport>\\n"
+        #ms_trans
+        rep+=outil.FormaliserMessageTransmis(self.msg_trans,"   ")
+        #liste_billets
+        rep+=outil.FormaliserBillet(self.liste_billets,"   ")
+        #liste_billets_attente
+        rep+=outil.FormaliserBillet(self.liste_billets_attente,"   ")
+        rep+="</Client>"+"\\n"
+        return rep
     #
     # Transfert de messages
     #
@@ -116,6 +116,10 @@ class CLTApp(apg.Application):
 
         if message.instance() == "MessageDemande":
             message = msg.MessageDemande(pld,self)
+        elif message.instance() == "MessageAccuseReception":
+            message = msg.MessageAccuseReception(pld,self)
+        elif message.instance() == "MessageAccuseReception":
+            message = msg.MessageAccuseReception(pld,self)
         elif message.instance() == "MessageAccuseReception":
             message = msg.MessageAccuseReception(pld,self)
 
@@ -157,7 +161,7 @@ class CLTApp(apg.Application):
             self.liste_billets += self.liste_billets_attente
         else:
             self.info = "Vous avez rejeté la réservation\\n"
-        while self.send(msg.MessageAccuseReception("",self, self.couleur, self.nseq, lmp = self.lport.getValue(), clientDemandeur = self.name, identifiantMessageRecu = self.msg_reservation_id, reponse=oui_ou_non)):
+        while self.send(msg.MessageAccuseReception("",self, self.snapshot.getCouleur(), self.nseq, lmp = self.lport.getValue(), clientDemandeur = self.name, identifiantMessageRecu = self.msg_reservation_id, reponse=oui_ou_non)):
             time.sleep(100)
         self.liste_billets_attente = []
         self.config_gui_ajout_boutons()
@@ -173,6 +177,7 @@ class CLTApp(apg.Application):
 
         self.snd(str(message), who=self.destination_app, where=self.destination_zone)
         self.nseq += 1
+        self.snapshot.bilan_incr()
 
         #lamp
         self.lport.incr()
@@ -196,7 +201,7 @@ class CLTApp(apg.Application):
             datemax = datemax.get()
             if len(datemax) > 0:
                 infoBillet += "datemax|{}+".format(datemax)
-            self.send(msg.MessageDemande("",self, self.couleur, self.nseq, lmp = self.lport.getValue(), clientDemandeur = self.name, infoBillet = infoBillet))
+            self.send(msg.MessageDemande("",self, self.snapshot.getCouleur(), self.nseq, lmp = self.lport.getValue(), clientDemandeur = self.name, infoBillet = infoBillet))
     #
     # Action du bouton de réservation
     #
@@ -214,7 +219,7 @@ class CLTApp(apg.Application):
             datemax = datemax.get()
             if len(datemax) > 0:
                 infoBillet += "datemax|{}+".format(datemax)
-            self.send(msg.MessageDemande("",self, self.couleur, self.nseq, lmp = self.lport.getValue(), clientDemandeur = self.name, infoBillet = infoBillet, typeDemande = "reservation"))
+            self.send(msg.MessageDemande("",self, self.snapshot.getCouleur(), self.nseq, lmp = self.lport.getValue(), clientDemandeur = self.name, infoBillet = infoBillet, typeDemande = "reservation"))
     #
     # Afficher les billets possédés
     #

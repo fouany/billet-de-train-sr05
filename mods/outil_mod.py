@@ -46,35 +46,54 @@ def parse_info_billet(txt):
             arr[l[0]] = l[1]
     return arr
 
-def FormaliserMessage(array_Message,decalage=""):
-    rep=decalage+"<liste_de_messages>\n"
+def FormaliserMessageTransmis(array_Message,decalage=""):
+    rep=decalage+"<liste_de_messages_transmis>\\n"
     if str(type(array_Message)) == "<class 'list'>":
-        for Message in array_Message:
-            rep+=decalage+"   <Message>\n"
-            rep+=decalage+"      "+str(Message)+"\n"
-            rep+=decalage+"   </Message>\n"
-        rep+=decalage+"</liste_de_messages>\n"
+        for message in array_Message:
+            rep+="{}   <message_transmis>\\n".format(decalage)
+            rep+="{}      {}\\n".format(decalage,message)
+            rep+="{}   </message_transmis>\\n".format(decalage)
+        rep+=decalage+"</liste_de_messages_transmis>\\n"
     elif str(type(array_Message)) == "<class 'dict'>":
-        for key,Message in array_Message.items():
-            rep+=decalage+"   <Message>\n"
-            rep+=decalage+"      "+str(Message)+"\n"
-            rep+=decalage+"   </Message>\n"
-        rep+=decalage+"</liste_de_messages>\n"
+        for key,message in array_Message.items():
+            rep+="{}   <message_transmis>\\n".format(decalage)
+            rep+="{}      {}\\n".format(decalage,message)
+            rep+="{}   </message_transmis>\\n".format(decalage)
+        rep+=decalage+"</liste_de_messages_transmis>\\n"
+    else:
+        with open("war.txt","w") as f:
+            f.write(type(array_Message))
+    return rep
+
+def FormaliserMessageAttente(array_Message,decalage=""):
+    rep=decalage+"<liste_de_messages_en_attente>\\n"
+    if str(type(array_Message)) == "<class 'list'>":
+        for message in array_Message:
+            rep+="{}   <messages_en_attente>\\n".format(decalage)
+            rep+="{}      {}\\n".format(decalage,str(message))
+            rep+="{}   </messages_en_attente>\\n".format(decalage)
+        rep+=decalage+"</liste_de_messages_transmis>\\n"
+    elif str(type(array_Message)) == "<class 'dict'>":
+        for key,message in array_Message.items():
+            rep+="{}   <messages_en_attente>\\n".format(decalage)
+            rep+="{}      {}\\n".format(decalage,str(message))
+            rep+="{}   </messages_en_attente>\\n".format(decalage)
+        rep+=decalage+"</liste_de_messages_en_attente>\\n"
     else:
         with open("war.txt","w") as f:
             f.write(type(array_Message))
     return rep
 
 def FormaliserBillet(array_billets,decalage=""):
-    rep=decalage+"<liste_de_billets>\n"
+    rep=decalage+"<liste_de_billets>\\n"
     for billet in array_billets:
-        rep+=decalage+"   <Billet>\n"
-        rep+=decalage+"      "+billet.str()+"\n"
-        rep+=decalage+"   </Billet>\n"
-    rep+=decalage+"</liste_de_billets>\n"
+        rep+="{}   <billet>\\n".format(decalage)
+        rep+="{}      {}\\n".format(decalage,billet.str())
+        rep+="{}   </billet>\\n".format(decalage)
+    rep+=decalage+"</liste_de_billets>\\n"
     return rep
 def FormaliserPrepost(prepost):
-    rep="<Message_Prepost>\n"
-    rep+="<!--Message recu postclic et envoyé précli-->\n"
-    rep+="   "+prepost+"\n"
-    rep+="</Message_Prepost>\n"
+    rep="<Message_Prepost>\\n"
+    rep+="<!--Message recu postclic et envoyé précli-->\\n"
+    rep+="   "+prepost+"\\n"
+    rep+="</Message_Prepost>\\n"

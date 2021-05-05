@@ -23,12 +23,13 @@ class GCHApp(apg.Application):
         self.info = "Bonjour !\\n"
         self.nseq = 0
         self.sending_in_progress = None
+        self.msg_trans = []
 
         ## Création du module pour les estampilles
         self.lport = lport.lport()
 
         ## Création d'un service de snapshot
-        self.snapchot = snap.SnapshotService(6)
+        self.snapshot = snap.SnapshotService(6)
 
         ## Création d'une liste de billets
         self.BilletsDisponibles=[]
@@ -49,22 +50,19 @@ class GCHApp(apg.Application):
         if self.check_mandatory_parameters():
             self.config_gui()
             self.end_initialisation()
-    #
-    # Formalise le guichet en xml
-    #
     def str(self):
-        rep="<guichet>\n"
+        rep="<guichet>\\n"
         #name
-        rep+="   <name>"+self.name+"</name>\n"
+        rep+="   <name>"+self.name+"</name>\\n"
         #nseq
-        rep+="   <nseq>"+str(self.nseq)+"</nseq>\n"
+        rep+="   <nseq>"+str(self.nseq)+"</nseq>\\n"
         #lport
-        rep+="   <lport>"+str(self.lport.getValue())+"</lport>\n"
+        rep+="   <lport>"+str(self.lport.getValue())+"</lport>\\n"
         #BilletsDisponibles
         rep+=outil.FormaliserBillet(self.BilletsDisponibles,"   ")
         #MessageAttente
-        rep+=outil.FormaliserMessage(self.MessageAttente,"   ")
-        rep+="</guichet>"+"\n"
+        rep+=outil.FormaliserMessageAttente(self.MessageAttente,"   ")
+        rep+="</guichet>"+"\\n"
         return rep
     def start(self):
         super().start()
@@ -115,11 +113,11 @@ class GCHApp(apg.Application):
         listeBillet = outil.setStrBillets(arrayMatchedBillets)
         typeDemande=messageDemande.typeDemande()
         clientDestinataire=messageDemande.clientDemandeur()
-        reponse=msg.MessageAvecBillets("", self, self.snapshot.couleur(),self.nseq, self.lport.getValue(), clientDestinataire, typeDemande, listeBillet)
+        reponse=msg.MessageAvecBillets("", self, self.snapshot.getCouleur(),self.nseq, self.lport.getValue(), clientDestinataire, typeDemande, listeBillet)
         self.nseq += 1
         if typeDemande == 'reservation':
             self.mettreDeCoteBillets(reponse,arrayMatchedBillets)
-        self.snd(str(reponse), who=self.destination_app, where=self.destination_zone)
+        self.send(reponse)
 
     def validerListeBillets(self,message):
         if message.reponse() == "False":
@@ -127,34 +125,45 @@ class GCHApp(apg.Application):
         else:
             self.MessageAttente.pop(str(message.identifiantMessageRecu()))
 
+    def send(self,message):
+        self.snd(str(message), who=self.destination_app, where=self.destination_zone)
+        self.snapshot.bilan_incr()
 
     def receive(self, pld, src, dst, where):
         if self.started  and self.check_mandatory_parameters():
             self.vrb("{}.rcv(pld={}, src={}, dst={}, where={})".format(self.APP(),pld, src, dst, where), 6)
             super().receive(pld, src=src, dst=dst, where=where)
 
-
             received_message=msg.Message(pld,self)
+            if received_message.clientDestinataire() != self.name:
+                return
+
+            codeMessage = received_message.clientDemandeur()+" "+str(received_message.id())
+            if not codeMessage in self.msg_trans:
+                self.msg_trans.append(codeMessage)
+            else:
+                return
+
             if int(received_message.lmp()) > self.lport.getValue():
                 self.lport.setValue(int(received_message.lmp()))
             self.lport.incr()
 
-            if received_message.clientDestinataire() != self.name:
-                return
-
             if received_message.instance() == "MessageDemande":
-                self.repondreListeBillets(msg.MessageDemande(pld,self))
-
+                received_message = msg.MessageDemande(pld,self)
+                self.repondreListeBillets(received_message)
             elif received_message.instance() == "MessageAccuseReception":
-                self.validerListeBillets(msg.MessageAccuseReception(pld,self))
-
+                received_message = msg.MessageAccuseReception(pld,self)
+                self.validerListeBillets(received_message)
             elif received_message.instance() == "MessageSnapshot":
-                # self.info="id_message_recu = "+received_message.identifiantMessageRecu()
-                # completerSnapshotAvecClient(received_message)
-                print("tmp")
-            else:
-                received_message=msg.Msessage(pld,self)
-                self.info="Message lambda"
+                received_message = msg.MessageSnapshot(pld,self)
+                reset_snapshot = self.snapshot.receptionMessageSnapshot(received_message,self)
+                if reset_snapshot != None:
+                    self.send(reset_snapshot)
+            elif received_message.instance() == "MessageSnapshotPrepost":
+                received_message = msg.MessageSnapshotPrepost(pld,self)
+                reset_snapshot = self.snapshot.receptionMessageSnapshotPrepost(received_message,self)
+                if reset_snapshot != None:
+                    self.send(reset_snapshot)
             self.print_info()
         else:
             self.vrb_dispwarning("Application {} not started".format(self.APP()))
@@ -173,7 +182,7 @@ class GCHApp(apg.Application):
     #
     def Lancee_Snapshot(self):
         self.lport.incr()
-        self.snapchot.lancer(self.str())
+        self.send(self.snapshot.lancer(self))
         #Propager la snapshot
     #
     # Imprimer self.info sur l'interface graphique
