@@ -86,8 +86,6 @@ class SnapshotService:
         self.NbMsgAttendus-=1
         return self.save(app)
     def save(self,app):
-        app.info = "nb_msg="+str(self.NbMsgAttendus)+" nb_etat="+str(self.NbEtatsAttendus)+"\\n"
-        app.print_info()
         if self.NbMsgAttendus == 0 and self.NbEtatsAttendus == 0:
             t = time.localtime()
             filename = "snapshot-{}.xml".format(time.strftime("%H_%M_%S",t))
