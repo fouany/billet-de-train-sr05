@@ -13,7 +13,7 @@ import time
 
 class GCHApp(apg.Application):
     def __init__(self):
-        default_options_values={"default-pld":"Hello World","appname":"GCH","whatwho":True, "bas-dest":"GCH","bas-delay":"1","bas-autosend":False}
+        default_options_values={"default-pld":"Hello World","appname":"GCH","whatwho":True, "bas-dest":"GCH","bas-delay":"1","bas-autosend":False,"nb-sites":"1"}
         super().__init__(default_options_values)
         self.mandatory_parameters += [] # No mandatory parameter for this app
         self.destination_app=self.params["bas-dest"]
@@ -29,7 +29,7 @@ class GCHApp(apg.Application):
         self.lport = lport.lport()
 
         ## Création d'un service de snapshot
-        self.snapshot = snap.SnapshotService(6)
+        self.snapshot = snap.SnapshotService(int(self.params["nb-sites"]))
 
         ## Création d'une liste de billets
         self.BilletsDisponibles=[]
@@ -100,6 +100,7 @@ class GCHApp(apg.Application):
         return deja_filtre,arrayMatchedBillets
 
     def repondreListeBillets(self,messageDemande):
+        self.snapshot.bilan_decr()
         arrayMatchedBillets = []
         deja_filtre = False
         filtres = outil.parse_info_billet(messageDemande.infoBillet())
@@ -120,6 +121,7 @@ class GCHApp(apg.Application):
         self.send(reponse)
 
     def validerListeBillets(self,message):
+        self.snapshot.bilan_decr()
         if message.reponse() == "False":
             self.annulerReservationBillets(message.identifiantMessageRecu())
         else:
@@ -127,7 +129,8 @@ class GCHApp(apg.Application):
 
     def send(self,message):
         self.snd(str(message), who=self.destination_app, where=self.destination_zone)
-        self.snapshot.bilan_incr()
+        if(message.instance() != "MessageSnapshot" and message.instance() != "MessageSnapshotPrepost"):
+            self.snapshot.bilan_incr()
 
     def receive(self, pld, src, dst, where):
         if self.started  and self.check_mandatory_parameters():

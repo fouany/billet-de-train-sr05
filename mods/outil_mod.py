@@ -69,14 +69,22 @@ def FormaliserMessageAttente(array_Message,decalage=""):
     rep=decalage+"<liste_de_messages_en_attente>\\n"
     if str(type(array_Message)) == "<class 'list'>":
         for message in array_Message:
+            xml_msg=str(message).replace("^","</valeur>\\n{}         </param>\\n{}         <param>".format(decalage,decalage,decalage))
+            xml_msg=xml_msg.replace("~","\\n{}            <valeur>".format(decalage))
+            xml_msg=xml_msg[len("</valeur>\\n{}         </param>\\n".format(decalage)):]
+            xml_msg=xml_msg[:(len(xml_msg)-len("\\n{}         <param>".format(decalage)))]
             rep+="{}   <messages_en_attente>\\n".format(decalage)
-            rep+="{}      {}\\n".format(decalage,str(message))
+            rep+="{}\\n".format(xml_msg)
             rep+="{}   </messages_en_attente>\\n".format(decalage)
         rep+=decalage+"</liste_de_messages_transmis>\\n"
     elif str(type(array_Message)) == "<class 'dict'>":
         for key,message in array_Message.items():
+            xml_msg=str(message).replace("^","</valeur>\\n{}         </param>\\n{}         <param>".format(decalage,decalage,decalage))
+            xml_msg=xml_msg.replace("~","\\n{}            <valeur>".format(decalage))
+            xml_msg=xml_msg[len("</valeur>\\n{}         </param>\\n".format(decalage)):]
+            xml_msg=xml_msg[:(len(xml_msg)-len("\\n{}         <param>".format(decalage)))]
             rep+="{}   <messages_en_attente>\\n".format(decalage)
-            rep+="{}      {}\\n".format(decalage,str(message))
+            rep+="{}\\n".format(xml_msg)
             rep+="{}   </messages_en_attente>\\n".format(decalage)
         rep+=decalage+"</liste_de_messages_en_attente>\\n"
     else:

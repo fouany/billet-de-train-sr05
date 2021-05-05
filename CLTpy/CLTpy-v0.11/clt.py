@@ -75,8 +75,12 @@ class CLTApp(apg.Application):
                     time.sleep(100)
             # si on est destinataire on receptionne le message
             else:
+                self.snapshot.bilan_decr()
                 if received_message.instance() == "MessageAvecBillets":
                     self.gerer_billets(msg.MessageAvecBillets(pld,self))
+                elif received_message.instance() == "MessageSnapshot":
+                    self.snapshot.bilan_incr()
+                    self.snapshot.flipReset(msg.MessageSnapshot(pld,self).typeMessage())
                 # les messages qu'un client n'est pas censés recevoir émettent une erreur
                 elif received_message.clientDestinataire() != self.snapshot.ALL():
                     self.info = "Le site "+received_message.clientDemandeur()+" vous a envoyé un message du type"+received_message.instance()+"\\n"
@@ -85,7 +89,9 @@ class CLTApp(apg.Application):
                 propagation = self.snapshot.propager(self,received_message.couleur(),str(received_message))
                 if propagation != None:
                     self.send(propagation)
-                    self.send(self.snapshot.lancer(self))
+                    pierre = self.snapshot.lancer(self)
+                    if pierre != None:
+                        self.send(pierre)
             self.print_info()
         else:
             self.vrb_dispwarning("Application {} not started".format(self.APP()))
@@ -118,10 +124,6 @@ class CLTApp(apg.Application):
             message = msg.MessageDemande(pld,self)
         elif message.instance() == "MessageAccuseReception":
             message = msg.MessageAccuseReception(pld,self)
-        elif message.instance() == "MessageAccuseReception":
-            message = msg.MessageAccuseReception(pld,self)
-        elif message.instance() == "MessageAccuseReception":
-            message = msg.MessageAccuseReception(pld,self)
 
         message.incLmp()
 
@@ -134,6 +136,14 @@ class CLTApp(apg.Application):
     # Gérer la réception d'un message avec billets
     #
     def gerer_billets(self,message):
+        liste = outil.getArrayBillets(message.listeBillet())
+        if len(liste) <= 0:
+            self.info = "Aucun billet correspondant à la demande\\n"
+            self.print_info()
+            if message.typeDemande() == "reservation":
+                self.msg_reservation_id = message.id()
+                self.accepte_reservation(False,True)
+            return
         if message.typeDemande() == "reservation":
             self.config_gui_masquer_boutons()
             self.liste_billets_attente = []
@@ -142,7 +152,7 @@ class CLTApp(apg.Application):
             self.config_gui_ajout_validation()
         else:
             self.info = "Vous consultez :\\n"
-        array_bil = outil.getArrayBillets(message.listeBillet())
+        array_bil = liste
         for str_bil in array_bil:
             billet = bil.Billet(str_bil,self)
             if message.typeDemande() == "reservation":
@@ -152,19 +162,22 @@ class CLTApp(apg.Application):
     #
     # Gére la réponse de l'utilisateur face au choix de réservation
     #
-    def accepte_reservation(self,oui_ou_non):
-        self.config_gui_masquer_validation()
+    def accepte_reservation(self,oui_ou_non,auto=False):
+        if not auto:
+            self.config_gui_masquer_validation()
         if oui_ou_non:
             self.info = "Vous avez accepté la réservation\\n"
             for x in self.liste_billets_attente:
                 x.setDetenteur(self.name)
-            self.liste_billets += self.liste_billets_attente
+            if not auto:
+                self.liste_billets += self.liste_billets_attente
         else:
             self.info = "Vous avez rejeté la réservation\\n"
         while self.send(msg.MessageAccuseReception("",self, self.snapshot.getCouleur(), self.nseq, lmp = self.lport.getValue(), clientDemandeur = self.name, identifiantMessageRecu = self.msg_reservation_id, reponse=oui_ou_non)):
             time.sleep(100)
         self.liste_billets_attente = []
-        self.config_gui_ajout_boutons()
+        if not auto:
+            self.config_gui_ajout_boutons()
         self.print_info()
     #
     # Emmission de messages
@@ -177,7 +190,8 @@ class CLTApp(apg.Application):
 
         self.snd(str(message), who=self.destination_app, where=self.destination_zone)
         self.nseq += 1
-        self.snapshot.bilan_incr()
+        if(message.instance() != "MessageSnapshot" and message.instance() != "MessageSnapshotPrepost"):
+            self.snapshot.bilan_incr()
 
         #lamp
         self.lport.incr()
