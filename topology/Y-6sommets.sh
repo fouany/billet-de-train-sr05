@@ -24,7 +24,7 @@ mkfifo ./tmp/in6n ./tmp/out6n
 
 # Créer les apps et redirection de stdin et out de chacune
 # Noeud 1
-./gch.py --auto --appname=CLT --ident=gch --whatwho --bas-dest=NET < ./tmp/in1c > ./tmp/out1c &
+./gch.py --auto --nb-sites=6 --appname=CLT --ident=gch --whatwho --bas-dest=NET < ./tmp/in1c > ./tmp/out1c &
 ./net.py --auto --ident=gch --whatwho < ./tmp/in1n > ./tmp/out1n &
 
 # Noeud 2
